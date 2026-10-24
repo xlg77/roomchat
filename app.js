@@ -2019,7 +2019,7 @@ function chooseKickMinutes(name) {
     ui.kickDialog.showModal();
   });
 }
-const KICK_LABELS = { 1: '1분', 5: '5분', 1440: '하루' };
+const KICK_LABELS = { 1: '1분', 5: '5분', 10: '10분', 30: '30분', 60: '1시간', 180: '3시간', 360: '6시간', 720: '12시간', 1440: '하루' };
 function chooseMuteMinutes(name) {
   return new Promise((resolve) => {
     ui.muteTarget.textContent = name || '이 참여자';
