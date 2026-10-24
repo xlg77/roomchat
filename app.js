@@ -1981,6 +1981,12 @@ async function deleteRoomRecord(room) {
     });
     if (pathError) throw pathError;
     await removeImages(paths || []);
+    const roomIconPaths = [room, ...state.rooms.filter((item) => item.parent_id === room.id)]
+      .map((item) => item.image_path).filter((path) => typeof path === 'string' && path);
+    if (roomIconPaths.length) {
+      const { error: iconError } = await supabase.storage.from('room-icons').remove([...new Set(roomIconPaths)]);
+      if (iconError) throw iconError;
+    }
     const { error } = await supabase.rpc('roomchat_delete_room', {
       p_room_id: room.id, p_owner_token: ownerToken,
     });
