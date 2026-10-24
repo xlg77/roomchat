@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <link rel="icon" href="./icon.svg" type="image/svg+xml" />
   <link rel="manifest" href="./manifest.webmanifest" />
-  <link rel="stylesheet" href="./styles.css?v=20261025-owner-delete-mute-v2" />
+  <link rel="stylesheet" href="./styles.css?v=20261025-timed-kick-v1" />
   <title>RoomChat — 실시간 채팅 커뮤니티</title>
 </head>
 <body>
@@ -352,6 +352,12 @@
       <div class="kick-options">
         <button class="secondary-button" type="button" data-kick-minutes="1">1분</button>
         <button class="secondary-button" type="button" data-kick-minutes="5">5분</button>
+        <button class="secondary-button" type="button" data-kick-minutes="10">10분</button>
+        <button class="secondary-button" type="button" data-kick-minutes="30">30분</button>
+        <button class="secondary-button" type="button" data-kick-minutes="60">1시간</button>
+        <button class="secondary-button" type="button" data-kick-minutes="180">3시간</button>
+        <button class="secondary-button" type="button" data-kick-minutes="360">6시간</button>
+        <button class="secondary-button" type="button" data-kick-minutes="720">12시간</button>
         <button class="secondary-button" type="button" data-kick-minutes="1440">하루</button>
       </div>
       <div class="modal-actions"><button class="secondary-button" type="button" data-kick-cancel>취소</button></div>
@@ -430,6 +436,6 @@
     </section>
   </dialog>
   <script type="module" src="./soundboard.js?v=20261024-soundboard-large-v2"></script>
-  <script type="module" src="./app.js?v=20261025-owner-delete-mute-v2"></script>
+  <script type="module" src="./app.js?v=20261025-timed-kick-v1"></script>
 </body>
 </html>
