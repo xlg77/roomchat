@@ -43,7 +43,7 @@ const ui = {
   gifQuery: $('#gif-query'), gifStatus: $('#gif-status'), gifGrid: $('#gif-grid'),
   avatarSection: $('#avatar-section'), avatarDrop: $('#avatar-drop'), avatarPreview: $('#avatar-preview'),
   avatarHelp: $('#avatar-help'), avatarFile: $('#avatar-file'), avatarRemove: $('#avatar-remove'),
-  kickDialog: $('#kick-dialog'), kickTarget: $('#kick-target'), styleOpen: $('#style-open-button'),
+  kickDialog: $('#kick-dialog'), kickTarget: $('#kick-target'), muteDialog: $('#mute-dialog'), muteTarget: $('#mute-target'), styleOpen: $('#style-open-button'),
   roomIcon: $('#room-icon'), roomImageButton: $('#room-image-button'), roomImageRemove: $('#room-image-remove'),
   roomImageFile: $('#room-image-file'), roomBanner: $('.topbar'),
   replyPreview: $('#reply-preview'), replyPreviewName: $('#reply-preview-name'),
@@ -567,7 +567,7 @@ function updateRoomHeading(room) {
     : parentRoom ? `하위 채널 · ${parentRoom.name}` : '공개 채널';
   ui.roomTopic.hidden = guideRoom;
   ui.childRoomButton.hidden = Boolean(room.parent_id || guideRoom);
-  ui.roomDelete.hidden = !(state.isAdmin && !room.is_featured);
+  ui.roomDelete.hidden = !(canManageRoom(room) && !room.is_featured);
   renderRoomLists();
 }
 function removeMessage(messageId) {
@@ -1182,6 +1182,14 @@ function renderMembers() {
         clean.textContent = '이름 정리';
         clean.addEventListener('click', () => moderateNickname(member));
         row.append(clean);
+      }
+      if (!verifiedAdmin) {
+        const mute = document.createElement('button');
+        mute.className = 'admin-action';
+        mute.type = 'button';
+        mute.textContent = '채팅 제한';
+        mute.addEventListener('click', () => muteMember(member));
+        row.append(mute);
       }
       const kick = document.createElement('button');
       kick.className = 'admin-action danger-action';
@@ -1964,24 +1972,30 @@ async function deleteMessage(message) {
   } catch (error) { showToast(errorText(error, '메시지를 삭제하지 못했어요.')); }
 }
 async function deleteRoomRecord(room) {
-  if (!state.isAdmin || !room || room.is_featured) return;
-  if (!window.confirm(`“${room.name}” 채널과 메시지 기록을 삭제할까요?`)) return;
+  if (!room || room.is_featured || !canManageRoom(room)) return;
+  if (!window.confirm(`“${room.name}” 채널과 메시지 기록을 삭제할까요? 이 작업은 되돌릴 수 없어요.`)) return;
   try {
-    const { data: paths, error: pathError } = await supabase.rpc('roomchat_admin_room_image_paths', { p_room_id: room.id });
+    const ownerToken = roomOwnerToken(room.id);
+    const { data: paths, error: pathError } = await supabase.rpc('roomchat_room_image_paths', {
+      p_room_id: room.id, p_owner_token: ownerToken,
+    });
     if (pathError) throw pathError;
     await removeImages(paths || []);
-    const { error } = await supabase.rpc('roomchat_admin_delete_room', { p_room_id: room.id });
+    const { error } = await supabase.rpc('roomchat_delete_room', {
+      p_room_id: room.id, p_owner_token: ownerToken,
+    });
     if (error) throw error;
-    state.rooms = state.rooms.filter((item) => item.id !== room.id);
+    const removedIds = new Set([room.id, ...state.rooms.filter((item) => item.parent_id === room.id).map((item) => item.id)]);
+    state.rooms = state.rooms.filter((item) => !removedIds.has(item.id));
     renderRoomLists();
-    if (state.room?.id === room.id) {
+    if (state.room && removedIds.has(state.room.id)) {
       const fallback = sortedRooms().find((item) => item.is_featured) || sortedRooms()[0];
       state.room = null;
       if (fallback) await switchRoom(fallback);
     }
-    renderAdminPanel();
+    if (ui.adminPanelDialog.open) renderAdminPanel();
     showToast('채널과 메시지 기록을 삭제했어요.');
-  } catch (error) { showToast(errorText(error, '방을 삭제하지 못했어요.')); }
+  } catch (error) { showToast(errorText(error, '방을 삭제하지 못했어요. DB 업데이트(room_owner_delete_mute_migration.sql)가 적용됐는지 확인해 주세요.')); }
 }
 async function deleteRoom() { return deleteRoomRecord(state.room); }
 function chooseKickMinutes(name) {
@@ -1999,6 +2013,36 @@ function chooseKickMinutes(name) {
   });
 }
 const KICK_LABELS = { 1: '1분', 5: '5분', 1440: '하루' };
+function chooseMuteMinutes(name) {
+  return new Promise((resolve) => {
+    ui.muteTarget.textContent = name || '이 참여자';
+    let chosen = null;
+    const onClick = (event) => {
+      const button = event.target.closest('[data-mute-minutes]');
+      if (button) { chosen = Number(button.dataset.muteMinutes); ui.muteDialog.close(); return; }
+      if (event.target.closest('[data-mute-cancel]') || event.target === ui.muteDialog) ui.muteDialog.close();
+    };
+    ui.muteDialog.addEventListener('click', onClick);
+    ui.muteDialog.addEventListener('close', () => { ui.muteDialog.removeEventListener('click', onClick); resolve(chosen); }, { once: true });
+    ui.muteDialog.showModal();
+  });
+}
+const MUTE_LABELS = { 1: '1분', 5: '5분', 10: '10분', 30: '30분', 60: '1시간', 1440: '하루' };
+async function muteMember(member) {
+  if (!canManageRoom(state.room)) return showToast('이 방의 운영자만 채팅을 제한할 수 있어요.');
+  if (member.isVerified) return showToast('인증된 관리자는 뮤트할 수 없어요.');
+  const minutes = await chooseMuteMinutes(member.nickname);
+  if (!minutes) return;
+  const { error } = await supabase.rpc('roomchat_mute_member', {
+    p_room_id: state.room.id,
+    p_user_id: member.userId || null,
+    p_guest_session_id: member.userId ? null : member.guestSessionId,
+    p_owner_token: roomOwnerToken(state.room.id),
+    p_minutes: minutes,
+  });
+  if (error) return showToast(errorText(error, '채팅 제한을 적용하지 못했어요.'));
+  showToast(`${member.nickname || '참여자'}님의 채팅을 ${MUTE_LABELS[minutes]} 동안 제한했어요.`);
+}
 async function kickMember(member) {
   if (!canManageRoom(state.room)) return showToast('이 방의 운영자만 참여자를 내보낼 수 있어요.');
   const minutes = await chooseKickMinutes(member.nickname);
@@ -2318,6 +2362,7 @@ function renderAdminPanel() {
       const actions = panelElement('div', 'admin-panel-row-actions');
       if (!member.isVerified) {
         actions.append(panelAction('이름 정리', '', () => moderateNickname(member)));
+        actions.append(panelAction('채팅 제한', '', () => muteMember(member)));
         actions.append(panelAction('내보내기', 'danger-action', () => kickMember(member)));
       }
       row.append(copy, actions);
