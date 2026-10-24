@@ -327,7 +327,21 @@ function showLoading() {
   ui.messages.append(loading);
 }
 function roomOwnerToken(roomId) {
-  try { return sessionStorage.getItem(`${ROOM_OWNER_PREFIX}${roomId}`); } catch { return null; }
+  const key = `${ROOM_OWNER_PREFIX}${roomId}`;
+  // Keep guest-owner credentials across refreshes and browser tab changes.
+  // The server stores only a SHA-256 hash and validates the token for each action.
+  try {
+    const persistent = localStorage.getItem(key);
+    if (persistent) return persistent;
+    const legacy = sessionStorage.getItem(key);
+    if (legacy) {
+      localStorage.setItem(key, legacy);
+      return legacy;
+    }
+    return null;
+  } catch {
+    try { return sessionStorage.getItem(key); } catch { return null; }
+  }
 }
 function canManageRoom(room) {
   return Boolean(state.isAdmin || (state.user && room?.created_by === state.user.id) || roomOwnerToken(room?.id));
@@ -1452,7 +1466,13 @@ async function createRoom(name, parentRoomId = null, unlimitedMessages = false) 
   if (!room?.id) { showToast('방이 만들어지지 않았어요. 다시 시도해 주세요.'); return; }
   if (!state.rooms.some((item) => item.id === room.id)) state.rooms.push(room);
   if (ownerToken) {
-    try { sessionStorage.setItem(`${ROOM_OWNER_PREFIX}${room.id}`, ownerToken); } catch { /* Browser session may be ephemeral. */ }
+    const ownerKey = `${ROOM_OWNER_PREFIX}${room.id}`;
+    try {
+      localStorage.setItem(ownerKey, ownerToken);
+      try { sessionStorage.setItem(ownerKey, ownerToken); } catch { /* localStorage is authoritative */ }
+    } catch {
+      try { sessionStorage.setItem(ownerKey, ownerToken); } catch { /* Storage may be disabled by the browser. */ }
+    }
   }
   renderRoomLists();
   state.room = null;
