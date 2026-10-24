@@ -199,3 +199,28 @@ END
 $function$;
 GRANT EXECUTE ON FUNCTION public.roomchat_post_message(uuid,text,text,uuid,text) TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.roomchat_post_reply(uuid,text,text,uuid,text,bigint) TO anon, authenticated;
+
+
+-- Expand timed kick durations to minutes and hours as well as one day.
+DO $$
+DECLARE v_definition text;
+BEGIN
+  SELECT pg_get_functiondef(p.oid) INTO v_definition
+  FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+  WHERE n.nspname='public' AND p.proname='roomchat_kick_member'
+    AND pg_get_function_identity_arguments(p.oid) LIKE 'p_room_id uuid, p_user_id uuid, p_guest_session_id uuid, p_owner_token text, p_minutes integer%';
+  IF v_definition IS NULL THEN
+    RAISE EXCEPTION 'roomchat_kick_member timed function not found';
+  END IF;
+  IF position('p_minutes NOT IN (1, 5, 1440)' in v_definition) > 0 THEN
+    v_definition := replace(v_definition,
+      'p_minutes NOT IN (1, 5, 1440)',
+      'p_minutes NOT IN (1, 5, 10, 30, 60, 180, 360, 720, 1440)');
+    v_definition := replace(v_definition,
+      '추방 시간은 1분, 5분, 하루 중에서 선택해 주세요.',
+      '추방 시간은 1분, 5분, 10분, 30분, 1시간, 3시간, 6시간, 12시간, 하루 중에서 선택해 주세요.');
+    EXECUTE v_definition;
+  ELSIF position('p_minutes NOT IN (1, 5, 10, 30, 60, 180, 360, 720, 1440)' in v_definition) = 0 THEN
+    RAISE EXCEPTION 'Unexpected kick duration validation; migration stopped safely.';
+  END IF;
+END $$;
