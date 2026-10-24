@@ -21,7 +21,10 @@ BEGIN
     RAISE EXCEPTION '이 방의 운영자만 방을 정리할 수 있습니다.';
   END IF;
   SELECT coalesce(array_agg(m.image_path) FILTER (WHERE m.image_path IS NOT NULL), ARRAY[]::text[])
-    INTO v_paths FROM public.messages m WHERE m.room_id = p_room_id;
+    INTO v_paths
+    FROM public.messages m
+    WHERE m.room_id = p_room_id
+       OR m.room_id IN (SELECT child.id FROM public.rooms child WHERE child.parent_id = p_room_id);
   RETURN v_paths;
 END
 $function$;
