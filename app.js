@@ -2220,13 +2220,36 @@ function panelAction(label, className, handler) {
   button.addEventListener('click', handler);
   return button;
 }
+let adminPanelSearch = '';
+function addAdminPanelSearch(container, placeholder) {
+  const input = panelElement('input', 'text-field admin-panel-search');
+  input.type = 'search'; input.maxLength = 100; input.placeholder = placeholder;
+  input.setAttribute('aria-label', placeholder); input.value = adminPanelSearch;
+  input.addEventListener('input', () => {
+    adminPanelSearch = input.value;
+    const position = input.selectionStart;
+    renderAdminPanel();
+    const next = ui.adminPanelContent.querySelector('.admin-panel-search');
+    if (next) { next.focus(); try { next.setSelectionRange(position, position); } catch {} }
+  });
+  container.append(input);
+}
+async function refreshAdminPanelData() {
+  if (!state.isAdmin) return;
+  try {
+    await loadRooms();
+    if (state.room) await refreshMembers();
+    renderAdminPanel();
+    showToast('운영 패널 데이터를 새로고침했어요.');
+  } catch (error) { showToast(errorText(error, '운영 데이터를 새로고침하지 못했어요.')); }
+}
 function renderAdminPanel() {
   if (!state.isAdmin) return;
   ui.adminPanelSummary.replaceChildren();
   const metrics = [
-    ['공개 방', state.rooms.length],
-    ['현재 방 참여자', state.members.length],
-    ['불러온 메시지', state.messages.length],
+    ['공개 방 목록', `${state.rooms.length}개 · 최대 100개 불러옴`],
+    ['현재 방 참여자', `${state.room ? state.members.length : '—'}명`],
+    ['현재 방 불러온 메시지', `${state.room ? state.messages.length : '—'}개`],
   ];
   for (const [label, value] of metrics) {
     const card = panelElement('div', 'admin-metric');
@@ -2242,7 +2265,8 @@ function renderAdminPanel() {
   if (state.adminPanelTab === 'overview') {
     ui.adminPanelContent.append(
       panelElement('h3', 'admin-panel-section-title', '빠른 관리'),
-      panelElement('p', 'admin-panel-note', `현재 방: ${state.room?.name || '선택된 방 없음'} · 관리자 초대 링크는 역할별 1회만 사용할 수 있어요.`),
+      panelElement('p', 'admin-panel-note', `현재 방: ${state.room?.name || '선택된 방 없음'} · 통계는 현재 불러온 데이터 기준입니다. 전체 기록 수와는 다를 수 있어요.`),
+      panelAction('데이터 새로고침', '', refreshAdminPanelData),
     );
     const shortcuts = panelElement('div', 'admin-shortcuts');
     for (const [tab, label, detail] of [
@@ -2260,10 +2284,13 @@ function renderAdminPanel() {
     return;
   }
   if (state.adminPanelTab === 'rooms') {
-    ui.adminPanelContent.append(panelElement('h3', 'admin-panel-section-title', '모든 공개 방'));
+    ui.adminPanelContent.append(panelElement('h3', 'admin-panel-section-title', `모든 공개 방 · ${state.rooms.length}개`));
+    addAdminPanelSearch(ui.adminPanelContent, '방 이름으로 검색');
     const list = panelElement('div', 'admin-panel-list');
-    if (!state.rooms.length) list.append(panelElement('p', 'admin-panel-empty', '표시할 방이 없습니다.'));
-    sortedRooms().forEach((room) => {
+    const query = adminPanelSearch.trim().toLocaleLowerCase();
+    const visibleRooms = sortedRooms().filter((room) => !query || String(room.name || '').toLocaleLowerCase().includes(query));
+    if (!visibleRooms.length) list.append(panelElement('p', 'admin-panel-empty', query ? '검색 조건에 맞는 방이 없습니다.' : '표시할 방이 없습니다.'));
+    visibleRooms.forEach((room) => {
       const row = panelElement('article', 'admin-panel-row');
       const copy = panelElement('div', 'admin-panel-row-copy');
       copy.append(panelElement('strong', '', room.name), panelElement('span', 'admin-panel-row-meta', room.is_featured ? '고정 기본방 · 삭제 보호' : '공개 방'));
@@ -2278,10 +2305,13 @@ function renderAdminPanel() {
   }
   if (state.adminPanelTab === 'members') {
     ui.adminPanelContent.append(panelElement('h3', 'admin-panel-section-title', `참여자 · ${state.room?.name || '방 미선택'}`));
+    if (state.room) addAdminPanelSearch(ui.adminPanelContent, '닉네임 또는 계정 유형 검색');
     const list = panelElement('div', 'admin-panel-list');
+    const query = adminPanelSearch.trim().toLocaleLowerCase();
+    const visibleMembers = state.members.filter((member) => !query || `${member.nickname || ''} ${member.userId ? '계정' : '게스트'}`.toLocaleLowerCase().includes(query));
     if (!state.room) list.append(panelElement('p', 'admin-panel-empty', '먼저 방을 선택해 주세요.'));
-    else if (!state.members.length) list.append(panelElement('p', 'admin-panel-empty', '현재 함께 있는 참여자가 없습니다.'));
-    for (const member of state.members) {
+    else if (!visibleMembers.length) list.append(panelElement('p', 'admin-panel-empty', query ? '검색 조건에 맞는 참여자가 없습니다.' : '현재 함께 있는 참여자가 없습니다.'));
+    for (const member of visibleMembers) {
       const row = panelElement('article', 'admin-panel-row');
       const copy = panelElement('div', 'admin-panel-row-copy');
       copy.append(panelElement('strong', member.isVerified ? 'admin-name' : '', displayNickname(member.nickname || '익명', member.isVerified)), panelElement('span', 'admin-panel-row-meta', member.isVerified ? '[인증됨] 관리자' : member.userId ? '계정' : '게스트'));
@@ -2297,11 +2327,14 @@ function renderAdminPanel() {
     return;
   }
   ui.adminPanelContent.append(panelElement('h3', 'admin-panel-section-title', `최근 메시지 · ${state.room?.name || '방 미선택'}`));
+  if (state.room) addAdminPanelSearch(ui.adminPanelContent, '작성자 또는 메시지 내용 검색');
   const list = panelElement('div', 'admin-panel-list');
   const recentMessages = [...state.messages].slice(-50).reverse();
+  const query = adminPanelSearch.trim().toLocaleLowerCase();
+  const visibleMessages = recentMessages.filter((message) => !query || `${message.nickname || ''} ${message.content || ''}`.toLocaleLowerCase().includes(query));
   if (!state.room) list.append(panelElement('p', 'admin-panel-empty', '먼저 방을 선택해 주세요.'));
-  else if (!recentMessages.length) list.append(panelElement('p', 'admin-panel-empty', '현재 방에 불러온 메시지가 없습니다.'));
-  for (const message of recentMessages) {
+  else if (!visibleMessages.length) list.append(panelElement('p', 'admin-panel-empty', query ? '검색 조건에 맞는 메시지가 없습니다.' : '현재 방에 불러온 메시지가 없습니다.'));
+  for (const message of visibleMessages) {
     const row = panelElement('article', 'admin-panel-row');
     const copy = panelElement('div', 'admin-panel-row-copy');
     const nickname = displayNickname(message.nickname || '익명', Boolean(message.is_verified));
@@ -2315,9 +2348,10 @@ function renderAdminPanel() {
 function openAdminPanel() {
   if (!state.isAdmin) return;
   state.adminPanelTab = 'overview';
+  adminPanelSearch = '';
   renderAdminPanel();
   ui.adminPanelDialog.showModal();
-  if (state.room) refreshMembers().then(renderAdminPanel);
+  refreshAdminPanelData();
 }
 async function refreshIdentity() {
   if (!state.nickname) return;
@@ -2386,6 +2420,7 @@ function setupEvents() {
   ui.adminPanelClose.addEventListener('click', () => ui.adminPanelDialog.close());
   document.querySelectorAll('[data-admin-panel-tab]').forEach((tab) => tab.addEventListener('click', () => {
     state.adminPanelTab = tab.dataset.adminPanelTab;
+    adminPanelSearch = '';
     renderAdminPanel();
     if (state.adminPanelTab === 'members' && state.room) refreshMembers().then(renderAdminPanel);
   }));
