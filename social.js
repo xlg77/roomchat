@@ -205,10 +205,20 @@ export function initSocial(ctx) {
 
   function styleNode(node, profile, kind) {
     if (!profile || profile.missing) return;
+    // Profiles are re-rendered and may have previously carried another user's
+    // style. Clear inline styling before applying the current profile.
+    node.style.removeProperty('font-family');
+    node.style.removeProperty('font-weight');
+    node.style.removeProperty('color');
     if (profile.nick_font && ensureFont(profile.nick_font)) node.style.fontFamily = fontStack(profile.nick_font);
     if (kind === 'text') return;
     if (profile.nick_weight) node.style.fontWeight = String(profile.nick_weight);
-    if (profile.nick_color && HEX.test(profile.nick_color)) node.style.color = profile.nick_color;
+    // Rainbow styling is reserved for verified administrators; regular users
+    // may use only their own single-color nickname setting.
+    if (!profile.is_verified && profile.nick_color && HEX.test(profile.nick_color)) {
+      node.style.color = profile.nick_color;
+    }
+    node.classList.toggle('admin-name', Boolean(profile.is_verified));
   }
   async function followTag(tag) {
     const uid = me();
