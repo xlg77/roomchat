@@ -1980,12 +1980,13 @@ async function deleteRoomRecord(room) {
       p_room_id: room.id, p_owner_token: ownerToken,
     });
     if (pathError) throw pathError;
-    await removeImages(paths || []);
+    let cleanupIncomplete = false;
+    try { await removeImages(paths || []); } catch { cleanupIncomplete = true; }
     const roomIconPaths = [room, ...state.rooms.filter((item) => item.parent_id === room.id)]
       .map((item) => item.image_path).filter((path) => typeof path === 'string' && path);
     if (roomIconPaths.length) {
       const { error: iconError } = await supabase.storage.from('room-icons').remove([...new Set(roomIconPaths)]);
-      if (iconError) throw iconError;
+      if (iconError) cleanupIncomplete = true;
     }
     const { error } = await supabase.rpc('roomchat_delete_room', {
       p_room_id: room.id, p_owner_token: ownerToken,
@@ -2000,7 +2001,7 @@ async function deleteRoomRecord(room) {
       if (fallback) await switchRoom(fallback);
     }
     if (ui.adminPanelDialog.open) renderAdminPanel();
-    showToast('채널과 메시지 기록을 삭제했어요.');
+    showToast(cleanupIncomplete ? '채널은 삭제했지만 일부 이미지 파일은 권한 때문에 정리하지 못했어요.' : '채널과 메시지 기록을 삭제했어요.');
   } catch (error) { showToast(errorText(error, '방을 삭제하지 못했어요. DB 업데이트(room_owner_delete_mute_migration.sql)가 적용됐는지 확인해 주세요.')); }
 }
 async function deleteRoom() { return deleteRoomRecord(state.room); }
