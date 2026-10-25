@@ -1211,7 +1211,32 @@ function renderMembers() {
         const mark = document.createElement('span');
         mark.className = 'verified-box';
         mark.textContent = '[인증됨]';
+        mark.title = '인증된 관리자';
         sideRow.append(mark);
+      }
+      // Keep moderation controls available in the sidebar as well as the member dialog.
+      // The same room-management check gates both places; server RPCs remain authoritative.
+      if (canManageRoom(state.room)) {
+        const actions = document.createElement('span');
+        actions.className = 'sidebar-member-actions';
+        actions.setAttribute('aria-label', `${nickname} 관리`);
+        if (!verifiedAdmin) {
+          const mute = document.createElement('button');
+          mute.className = 'admin-action sidebar-admin-action';
+          mute.type = 'button';
+          mute.textContent = '뮤트';
+          mute.setAttribute('aria-label', `${nickname} 뮤트`);
+          mute.addEventListener('click', (event) => { event.stopPropagation(); muteMember(member); });
+          actions.append(mute);
+        }
+        const kick = document.createElement('button');
+        kick.className = 'admin-action danger-action sidebar-admin-action';
+        kick.type = 'button';
+        kick.textContent = '킥';
+        kick.setAttribute('aria-label', `${nickname} 시간제 킥`);
+        kick.addEventListener('click', (event) => { event.stopPropagation(); kickMember(member); });
+        actions.append(kick);
+        sideRow.append(actions);
       }
       sidebarMembers.append(sideRow);
     }
