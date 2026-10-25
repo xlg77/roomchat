@@ -32,6 +32,19 @@ jobs:
           printf '{\n  "version": "v%s+%s",\n  "commit": "%s",\n  "deployedAt": "%s"\n}\n' "$DATE" "$SHORT" "$SHA" > version.json
           touch .nojekyll
 
+      - name: Bust cached asset URLs for every deployment
+        shell: python
+        run: |
+          import pathlib
+          import re
+          import os
+
+          build_id = os.environ["GITHUB_SHA"][:12]
+          for path in [*pathlib.Path(".").glob("*.html"), *pathlib.Path(".").glob("*.js"), *pathlib.Path(".").glob("*.css")]:
+              content = path.read_text(encoding="utf-8")
+              content = re.sub(r"([?&]v=)[^&\s\"'<>)]*", lambda match: match.group(1) + build_id, content)
+              path.write_text(content, encoding="utf-8")
+
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
         with:
