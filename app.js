@@ -327,20 +327,47 @@ function showLoading() {
   ui.messages.append(loading);
 }
 function roomOwnerToken(roomId) {
+  if (!roomId) return null;
   const key = `${ROOM_OWNER_PREFIX}${roomId}`;
+  const isValidToken = (value) => typeof value === 'string' && /^[0-9a-f]{64}$/u.test(value);
   // Keep guest-owner credentials across refreshes and browser tab changes.
   // The server stores only a SHA-256 hash and validates the token for each action.
   try {
     const persistent = localStorage.getItem(key);
-    if (persistent) return persistent;
+    if (isValidToken(persistent)) return persistent;
     const legacy = sessionStorage.getItem(key);
-    if (legacy) {
+    if (isValidToken(legacy)) {
       localStorage.setItem(key, legacy);
       return legacy;
     }
     return null;
   } catch {
-    try { return sessionStorage.getItem(key); } catch { return null; }
+    try {
+      const legacy = sessionStorage.getItem(key);
+      return isValidToken(legacy) ? legacy : null;
+    } catch { return null; }
+  }
+}
+function storeRoomOwnerToken(roomId, token) {
+  if (!roomId || typeof token !== 'string' || !/^[0-9a-f]{64}$/u.test(token)) return false;
+  const key = `${ROOM_OWNER_PREFIX}${roomId}`;
+  let stored = false;
+  try { localStorage.setItem(key, token); stored = true; } catch { /* Try tab storage below. */ }
+  try { sessionStorage.setItem(key, token); stored = true; } catch { /* Storage may be disabled. */ }
+  return stored;
+}
+async function recoverRoomOwnerToken(roomId) {
+  if (!roomId || roomOwnerToken(roomId)) return Boolean(roomOwnerToken(roomId));
+  try {
+    const { data, error } = await supabase.rpc('roomchat_recover_room_owner', {
+      p_room_id: roomId,
+      p_guest_session_id: guestSessionId,
+      p_guest_token: guestToken,
+    });
+    if (error || typeof data !== 'string') return false;
+    return storeRoomOwnerToken(roomId, data);
+  } catch {
+    return false;
   }
 }
 function canManageRoom(room) {
@@ -1483,7 +1510,7 @@ async function switchRoom(room) {
   if (ui.adminPanelDialog.open) renderAdminPanel();
 }
 async function createRoom(name, parentRoomId = null, unlimitedMessages = false) {
-  const cleanName = [...name.trim().replace(/\s+/gu, ' ')].slice(0, 20).join('');
+  const cleanName = [...name.trim().replace(/\s+/gu, ' ')].slice(0, 32).join('');
   if (cleanName.length < 2 || cleanName.length > 32) return showToast('방 이름은 2~32자로 입력해 주세요.');
   const ownerToken = state.user ? null : `${crypto.randomUUID()}${crypto.randomUUID()}`.replaceAll('-', '');
   const { data, error } = await supabase.rpc('roomchat_create_room', {
@@ -1498,15 +1525,7 @@ async function createRoom(name, parentRoomId = null, unlimitedMessages = false) 
   const room = normalizeRpcRow(data);
   if (!room?.id) { showToast('방이 만들어지지 않았어요. 다시 시도해 주세요.'); return; }
   if (!state.rooms.some((item) => item.id === room.id)) state.rooms.push(room);
-  if (ownerToken) {
-    const ownerKey = `${ROOM_OWNER_PREFIX}${room.id}`;
-    try {
-      localStorage.setItem(ownerKey, ownerToken);
-      try { sessionStorage.setItem(ownerKey, ownerToken); } catch { /* localStorage is authoritative */ }
-    } catch {
-      try { sessionStorage.setItem(ownerKey, ownerToken); } catch { /* Storage may be disabled by the browser. */ }
-    }
-  }
+  if (ownerToken) storeRoomOwnerToken(room.id, ownerToken);
   renderRoomLists();
   state.room = null;
   await switchRoom(room);
@@ -2279,10 +2298,27 @@ async function removeAvatar() {
   } catch (error) { showToast(errorText(error, '프로필 사진을 지우지 못했어요.')); }
   finally { state.avatarBusy = false; }
 }
-function openMembers() {
+async function openMembers() {
+  const roomId = state.room?.id;
   renderMembers();
   ui.membersDialog.showModal();
-  refreshMembers();
+  if (!roomId) return;
+  await refreshMembers(roomId);
+  if (state.room?.id !== roomId) return;
+
+  // If this guest session is the active participant but its browser lost the
+  // room-owner token, let the server restore it only after verifying both
+  // the guest secret and the room's recorded owner session.
+  const isCurrentGuest = !state.user
+    ? state.members.some((member) => member.guestSessionId === guestSessionId)
+    : false;
+  if (isCurrentGuest && !roomOwnerToken(roomId)) {
+    const recovered = await recoverRoomOwnerToken(roomId);
+    if (recovered && state.room?.id === roomId) {
+      renderMembers();
+      showToast('이 방의 방장 권한을 복구했어요. 이제 뮤트와 시간제 킥을 사용할 수 있어요.');
+    }
+  }
 }
 function panelElement(tag, className, text = '') {
   const element = document.createElement(tag);
