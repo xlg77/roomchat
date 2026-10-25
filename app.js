@@ -357,7 +357,8 @@ function storeRoomOwnerToken(roomId, token) {
   return stored;
 }
 async function recoverRoomOwnerToken(roomId) {
-  if (!roomId || roomOwnerToken(roomId)) return Boolean(roomOwnerToken(roomId));
+  if (!roomId) return false;
+  if (roomOwnerToken(roomId)) return true;
   try {
     const { data, error } = await supabase.rpc('roomchat_recover_room_owner', {
       p_room_id: roomId,
@@ -2309,10 +2310,10 @@ async function openMembers() {
   // If this guest session is the active participant but its browser lost the
   // room-owner token, let the server restore it only after verifying both
   // the guest secret and the room's recorded owner session.
-  const isCurrentGuest = !state.user
-    ? state.members.some((member) => member.guestSessionId === guestSessionId)
-    : false;
-  if (isCurrentGuest && !roomOwnerToken(roomId)) {
+  const isCurrentMember = state.user
+    ? state.members.some((member) => member.userId === state.user.id)
+    : state.members.some((member) => member.guestSessionId === guestSessionId);
+  if (isCurrentMember && state.room?.created_by == null && !isGuideRoom(state.room) && !roomOwnerToken(roomId)) {
     const recovered = await recoverRoomOwnerToken(roomId);
     if (recovered && state.room?.id === roomId) {
       renderMembers();
