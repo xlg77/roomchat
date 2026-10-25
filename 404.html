@@ -14,6 +14,22 @@
 </head>
 <body>
   <script id="roomchat-loading-failsafe">window.setTimeout(function(){var el=document.getElementById("app-loading");if(el){el.classList.add("is-hidden");window.setTimeout(function(){if(el.parentNode)el.parentNode.removeChild(el);},400);}},2500);</script>
+  <script id="roomchat-version-loader">
+    (async function () {
+      const label = document.getElementById('roomchat-build-version');
+      if (!label) return;
+      try {
+        const response = await fetch('/roomchat/version.json?t=' + Date.now(), { cache: 'no-store' });
+        if (!response.ok) throw new Error('version unavailable');
+        const build = await response.json();
+        if (!build || !build.version || !build.commit) throw new Error('invalid version');
+        label.textContent = '배포 버전 ' + build.version + ' · ' + build.commit.slice(0, 7);
+        label.title = '배포 커밋: ' + build.commit + (build.deployedAt ? ' · 빌드: ' + build.deployedAt : '');
+      } catch {
+        label.textContent = '배포 버전 확인 중…';
+      }
+    })();
+  </script>
   <div id="app-loading" class="app-loading" role="status" aria-live="polite" aria-label="RoomChat 불러오는 중">
     <div class="app-loading-card">
       <span class="app-loading-mark" aria-hidden="true"><i></i><b></b></span>
@@ -21,7 +37,7 @@
       <div class="app-loading-track" aria-hidden="true"><span></span></div>
       <p class="app-loading-title">대화 공간을 준비하고 있어요</p>
       <p class="app-loading-subtitle">채널과 메시지를 불러오는 중</p>
-      <p class="app-loading-version">버전 v2026.10.25.2</p>
+      <p class="app-loading-version" id="roomchat-build-version">버전 정보를 불러오는 중…</p>
       <div class="app-loading-dots" aria-hidden="true"><i></i><i></i><i></i></div>
     </div>
   </div>
