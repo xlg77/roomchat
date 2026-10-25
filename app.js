@@ -1,7 +1,7 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, GIPHY_API_KEY } from './config.js?v=20261025-deeplink-fix-v2';
-import { initSocial, renderMentions, mentionsName } from './social.js?v=20261025-deeplink-fix-v2';
-import { ensureFont, fontStack } from './fonts.js?v=20261024-update-refresh-v2';
+import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, GIPHY_API_KEY } from './config.js?v=20261025-subpath-sync-v3';
+import { initSocial, renderMentions, mentionsName } from './social.js?v=20261025-subpath-sync-v3';
+import { ensureFont, fontStack } from './fonts.js?v=20261025-subpath-sync-v3';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   realtime: { params: { eventsPerSecond: 8 } },
