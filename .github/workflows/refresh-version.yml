@@ -6,7 +6,6 @@ on:
       - main
     paths-ignore:
       - 'version.json'
-      - '.github/workflows/refresh-version.yml'
   workflow_dispatch:
 
 permissions:
