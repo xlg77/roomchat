@@ -5026,3 +5026,46 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,[role="button"]:
 }
 
 .app-loading-version{margin:10px 0 0;color:#4e7d95;font-size:11px;font-weight:700;letter-spacing:.35px;text-align:center;font-variant-numeric:tabular-nums}
+
+
+/* Sidebar moderation controls: visible to room owners/admins on desktop and mobile. */
+.sidebar-member-row { flex-wrap:wrap; }
+.sidebar-member-name { flex:1 1 72px; min-width:0; overflow-wrap:anywhere; }
+.sidebar-member-actions {
+  display:flex;
+  flex:1 0 100%;
+  justify-content:flex-end;
+  gap:6px;
+  min-width:0;
+  padding-left:38px;
+}
+.sidebar-member-actions .sidebar-admin-action {
+  min-height:30px;
+  padding:5px 9px;
+  font-size:11px;
+  line-height:1.2;
+  border:1px solid #65708a;
+  background:#202a3e;
+  color:#f3f6ff;
+}
+.sidebar-member-actions .sidebar-admin-action:hover,
+.sidebar-member-actions .sidebar-admin-action:focus-visible {
+  background:#34415d;
+  border-color:#9fb4e8;
+  color:#fff;
+}
+.sidebar-member-actions .sidebar-admin-action.danger-action {
+  border-color:#9b5962;
+  background:#402630;
+  color:#ffe9ec;
+}
+.sidebar-member-actions .sidebar-admin-action.danger-action:hover,
+.sidebar-member-actions .sidebar-admin-action.danger-action:focus-visible {
+  background:#67313b;
+  border-color:#ef9ba7;
+}
+@media (max-width: 760px) {
+  .sidebar-member-row { gap:6px; padding:7px 5px; }
+  .sidebar-member-actions { padding-left:34px; gap:5px; }
+  .sidebar-member-actions .sidebar-admin-action { min-height:32px; padding:6px 10px; font-size:12px; }
+}
