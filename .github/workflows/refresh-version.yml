@@ -1,0 +1,48 @@
+name: Refresh deployed version
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'version.json'
+      - '.github/workflows/refresh-version.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh-deployed-version
+  cancel-in-progress: false
+
+jobs:
+  update-version:
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Generate version from pushed commit
+        shell: bash
+        run: |
+          SHA="${GITHUB_SHA}"
+          SHORT="${SHA:0:7}"
+          DATE="$(date -u +'%Y.%m.%d')"
+          BUILT="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          printf '{\n  "version": "v%s+%s",\n  "commit": "%s",\n  "deployedAt": "%s"\n}\n' "$DATE" "$SHORT" "$SHA" "$BUILT" > version.json
+      - name: Commit generated version
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add version.json
+          if git diff --cached --quiet; then
+            echo "Version file already matches this commit."
+            exit 0
+          fi
+          git commit -m "chore: refresh deployed version [skip ci]"
+          git push
