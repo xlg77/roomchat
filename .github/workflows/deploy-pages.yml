@@ -22,6 +22,18 @@ jobs:
       - name: Check out source
         uses: actions/checkout@v4
 
+      - name: Validate JavaScript syntax and deep-link fallback
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in app.js social.js soundboard.js fonts.js config.js; do
+            node --input-type=module --check < "$file"
+          done
+          if ! cmp -s index.html 404.html; then
+            echo "::error::index.html and 404.html must stay synchronized for room subroutes."
+            exit 1
+          fi
+
       - name: Generate version for this deployment
         shell: bash
         run: |
