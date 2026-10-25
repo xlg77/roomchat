@@ -14,15 +14,13 @@ DECLARE
   v_owner_session_id uuid;
   v_owner_token text;
 BEGIN
-  -- Account sessions use rooms.created_by and must never claim guest ownership.
-  IF auth.uid() IS NOT NULL
-     OR p_room_id IS NULL
+  IF p_room_id IS NULL
      OR p_guest_session_id IS NULL
      OR char_length(coalesce(p_guest_token, '')) < 32 THEN
     RETURN NULL;
   END IF;
 
-  -- Verify the guest's secret against the server-side hash and expiry.
+  -- Verify the guest secret against the server-side hash and expiry.
   PERFORM 1
   FROM roomchat_private.guest_sessions gs
   WHERE gs.session_id = p_guest_session_id
@@ -68,4 +66,4 @@ END
 $function$;
 
 REVOKE ALL ON FUNCTION public.roomchat_recover_room_owner(uuid, uuid, text) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.roomchat_recover_room_owner(uuid, uuid, text) TO anon;
+GRANT EXECUTE ON FUNCTION public.roomchat_recover_room_owner(uuid, uuid, text) TO anon, authenticated;
