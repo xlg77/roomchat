@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <link rel="icon" href="/roomchat/icon.svg" type="image/svg+xml" />
   <link rel="manifest" href="/roomchat/manifest.webmanifest" />
-  <link rel="stylesheet" href="/roomchat/styles.css?v=20261024-deep-route-fix-v3" />
+  <link rel="stylesheet" href="/roomchat/styles.css?v=20261025-timed-kick-v1" />
   <title>RoomChat — 실시간 채팅 커뮤니티</title>
 </head>
 <body>
@@ -352,9 +352,32 @@
       <div class="kick-options">
         <button class="secondary-button" type="button" data-kick-minutes="1">1분</button>
         <button class="secondary-button" type="button" data-kick-minutes="5">5분</button>
+        <button class="secondary-button" type="button" data-kick-minutes="10">10분</button>
+        <button class="secondary-button" type="button" data-kick-minutes="30">30분</button>
+        <button class="secondary-button" type="button" data-kick-minutes="60">1시간</button>
+        <button class="secondary-button" type="button" data-kick-minutes="180">3시간</button>
+        <button class="secondary-button" type="button" data-kick-minutes="360">6시간</button>
+        <button class="secondary-button" type="button" data-kick-minutes="720">12시간</button>
         <button class="secondary-button" type="button" data-kick-minutes="1440">하루</button>
       </div>
       <div class="modal-actions"><button class="secondary-button" type="button" data-kick-cancel>취소</button></div>
+    </section>
+  </dialog>
+
+  <dialog id="mute-dialog" class="modal kick-modal">
+    <section class="modal-card compact-modal" aria-label="채팅 제한 시간 선택">
+      <span class="eyebrow">TIMEOUT</span>
+      <h2>채팅 제한 시간</h2>
+      <p><strong id="mute-target">참여자</strong>님의 채팅 입력을 선택한 시간 동안 막아요. 방에서 내보내지는 않으며 시간이 지나면 자동으로 해제돼요.</p>
+      <div class="kick-options">
+        <button class="secondary-button" type="button" data-mute-minutes="1">1분</button>
+        <button class="secondary-button" type="button" data-mute-minutes="5">5분</button>
+        <button class="secondary-button" type="button" data-mute-minutes="10">10분</button>
+        <button class="secondary-button" type="button" data-mute-minutes="30">30분</button>
+        <button class="secondary-button" type="button" data-mute-minutes="60">1시간</button>
+        <button class="secondary-button" type="button" data-mute-minutes="1440">하루</button>
+      </div>
+      <div class="modal-actions"><button class="secondary-button" type="button" data-mute-cancel>취소</button></div>
     </section>
   </dialog>
 
@@ -412,7 +435,7 @@
       <footer class="soundboard-footer"><button id="soundboard-stop" class="secondary-button" type="button">■ 재생 중지</button><span>사운드 제공: <a href="https://www.myinstants.com/" target="_blank" rel="noopener noreferrer">MyInstants</a></span></footer>
     </section>
   </dialog>
-  <script type="module" src="./soundboard.js?v=20261024-soundboard-large-v2"></script>
-  <script type="module" src="/roomchat/app.js?v=20261024-deep-route-fix-v3"></script>
+  <script type="module" src="/roomchat/soundboard.js?v=20261024-soundboard-large-v2"></script>
+  <script type="module" src="/roomchat/app.js?v=20261025-admin-rainbow-fix-v1"></script>
 </body>
 </html>
