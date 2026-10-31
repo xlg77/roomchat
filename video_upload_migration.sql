@@ -1,7 +1,7 @@
 -- Store chat video files in the existing chat-images bucket so message cleanup
 -- and room deletion continue to remove media through the existing image_path flow.
 UPDATE storage.buckets
-SET file_size_limit = 26214400,
+SET file_size_limit = 524288000,
     allowed_mime_types = ARRAY[
       'image/jpeg','image/png','image/webp','image/gif','image/avif',
       'video/mp4','video/webm','video/quicktime'
