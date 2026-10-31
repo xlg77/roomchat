@@ -1,7 +1,7 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, GIPHY_API_KEY } from './config.js?v=20261025-subpath-sync-v3';
-import { initSocial, renderMentions, mentionsName } from './social.js?v=20261025-subpath-sync-v3';
-import { ensureFont, fontStack } from './fonts.js?v=20261025-subpath-sync-v3';
+import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, GIPHY_API_KEY } from './config.js?v=20261031-video-attachments-v1';
+import { initSocial, renderMentions, mentionsName } from './social.js?v=20261031-video-attachments-v1';
+import { ensureFont, fontStack } from './fonts.js?v=20261031-video-attachments-v1';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   realtime: { params: { eventsPerSecond: 8 } },
@@ -24,8 +24,8 @@ const ui = {
   roomDelete: $('#room-delete-button'), childRoomButton: $('#new-child-room-button'), roomUnlimitedChoice: $('#room-unlimited-choice'), membersDialog: $('#members-dialog'), memberList: $('#member-list'),
   membersNote: $('#members-note'), membersClose: $('#members-close-button'), notificationButton: $('#notification-button'),
   notificationLabel: $('#notification-label'), messageForm: $('#message-form'), messageInput: $('#message-input'),
-  send: $('#send-button'), imageFile: $('#image-file'), preview: $('#attachment-preview'),
-  thumbnail: $('#attachment-thumbnail'), attachmentName: $('#attachment-name'), removeAttachment: $('#remove-attachment'),
+  send: $('#send-button'), imageFile: $('#image-file'), videoFile: $('#video-file'), preview: $('#attachment-preview'),
+  thumbnail: $('#attachment-thumbnail'), videoThumbnail: $('#attachment-video-thumbnail'), attachmentName: $('#attachment-name'), removeAttachment: $('#remove-attachment'),
   toast: $('#toast'), charCount: $('#char-count'),
   messageSearch: $('#message-search'), messageSearchDate: $('#message-search-date'), messageSearchClear: $('#message-search-clear'),
   chatSettingsButton: $('#chat-settings-button'), chatSettings: $('#chat-settings'),
@@ -55,6 +55,7 @@ const ROOM_OWNER_PREFIX = 'roomchat:owner:';
 const ROOM_FAVORITES_KEY = 'roomchat:room-favorites:v1';
 const FIXED_ROOM_NAME = '슬랩배틀 라이벌 입양 피기';
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
+const MAX_VIDEO_BYTES = 25 * 1024 * 1024;
 const ADMIN_INITIAL_NAMES = new Set(['천사', '크리스탈']);
 const GUIDE_ROOM_NAME = '설명 방';
 const GIF_PREFIX = '[gif]';
@@ -98,7 +99,7 @@ function isAllowedRoomSoundUrl(value) {
 const state = {
   nickname: '', loginNickname: '', isVerified: false, isAdmin: false, user: null,
   rooms: [], room: null, roomChannel: null, roomsChannel: null, members: [], messages: [],
-  attachment: null, attachmentUrl: '', pendingSound: null, soundPreviewNode: null, notifications: false, toastTimer: 0,
+  attachment: null, attachmentUrl: '', attachmentKind: null, pendingSound: null, soundPreviewNode: null, notifications: false, toastTimer: 0,
   roomRequest: 0, kickTimer: 0, memberTimer: 0, identityTimer: 0, kickedRooms: new Set(),
   accountMode: 'register', adminPanelTab: 'overview', pendingAdminInvite: null, pendingParentRoomId: null, pendingUnlimitedMessages: false,
   avatars: new Map(), myAvatarPath: null, avatarBusy: false, gifRequest: 0,
@@ -949,20 +950,34 @@ function renderMessage(message) {
   }
   if (message.image_path) {
     const { data } = supabase.storage.from('chat-images').getPublicUrl(message.image_path);
-    const imageLink = document.createElement('a');
-    imageLink.className = 'message-image-link';
-    imageLink.href = data.publicUrl;
-    imageLink.target = '_blank';
-    imageLink.rel = 'noopener noreferrer';
-    imageLink.setAttribute('aria-label', '공유 이미지 크게 보기');
-    imageLink.addEventListener('click', (event) => { event.preventDefault(); openImageZoom(data.publicUrl, '채팅방에서 공유한 이미지'); });
-    const image = document.createElement('img');
-    image.className = 'message-image';
-    image.src = data.publicUrl;
-    image.alt = '채팅방에서 공유한 이미지';
-    image.loading = 'lazy';
-    imageLink.append(image);
-    body.append(imageLink);
+    if (/\.(mp4|webm|mov)$/iu.test(message.image_path)) {
+      const videoCard = document.createElement('div');
+      videoCard.className = 'message-video';
+      const player = document.createElement('video');
+      player.className = 'message-video-player';
+      player.src = data.publicUrl;
+      player.controls = true;
+      player.playsInline = true;
+      player.preload = 'metadata';
+      player.setAttribute('aria-label', '채팅방에서 공유한 동영상');
+      videoCard.append(player);
+      body.append(videoCard);
+    } else {
+      const imageLink = document.createElement('a');
+      imageLink.className = 'message-image-link';
+      imageLink.href = data.publicUrl;
+      imageLink.target = '_blank';
+      imageLink.rel = 'noopener noreferrer';
+      imageLink.setAttribute('aria-label', '공유 이미지 크게 보기');
+      imageLink.addEventListener('click', (event) => { event.preventDefault(); openImageZoom(data.publicUrl, '채팅방에서 공유한 이미지'); });
+      const image = document.createElement('img');
+      image.className = 'message-image';
+      image.src = data.publicUrl;
+      image.alt = '채팅방에서 공유한 이미지';
+      image.loading = 'lazy';
+      imageLink.append(image);
+      body.append(imageLink);
+    }
   }
   body.append(createReactionBar(message));
   row.append(body);
@@ -979,7 +994,7 @@ function renderMessage(message) {
   copy.textContent = '복사';
   copy.setAttribute('aria-label', '메시지 내용 복사');
   copy.addEventListener('click', async () => {
-    const copyText = [message.content || '', message.image_path ? '[사진]' : ''].filter(Boolean).join('\n');
+    const copyText = [message.content || '', message.image_path ? (/\.(mp4|webm|mov)$/iu.test(message.image_path) ? '[동영상]' : '[사진]') : ''].filter(Boolean).join('\n');
     if (!copyText) return showToast('복사할 텍스트가 없어요.');
     try {
       await navigator.clipboard.writeText(copyText);
@@ -1794,12 +1809,18 @@ async function sendMessage(event) {
   let imagePath = null;
   try {
     if (image) {
-      const supportedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'];
-      if (!supportedTypes.includes(image.type) || image.size > MAX_IMAGE_BYTES) throw new Error('이미지 파일 형식 또는 크기를 확인해 주세요.');
-      const extension = ({ 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif', 'image/avif': 'avif' })[image.type] || 'img';
+      const extensionFromName = String(image.name || '').split('.').pop()?.toLowerCase() || '';
+      const mimeByExtension = { mp4: 'video/mp4', webm: 'video/webm', mov: 'video/quicktime' };
+      const mimeType = image.type || mimeByExtension[extensionFromName] || '';
+      const isVideo = state.attachmentKind === 'video';
+      const imageExtensions = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif', 'image/avif': 'avif' };
+      const videoExtensions = { 'video/mp4': 'mp4', 'video/webm': 'webm', 'video/quicktime': 'mov' };
+      const extension = (isVideo ? videoExtensions : imageExtensions)[mimeType];
+      const maxBytes = isVideo ? MAX_VIDEO_BYTES : MAX_IMAGE_BYTES;
+      if (!extension || image.size > maxBytes) throw new Error(isVideo ? 'MP4, WebM, MOV 동영상은 25MB 이하로 선택해 주세요.' : '이미지 파일 형식 또는 크기를 확인해 주세요.');
       imagePath = `${state.room.id}/${crypto.randomUUID()}.${extension}`;
       const { error: uploadError } = await supabase.storage.from('chat-images').upload(imagePath, image, {
-        contentType: image.type, cacheControl: '3600', upsert: false,
+        contentType: mimeType, cacheControl: '3600', upsert: false,
       });
       if (uploadError) throw uploadError;
     }
@@ -1939,26 +1960,50 @@ function registerServiceWorker() {
     navigator.serviceWorker.register('./sw.js').catch(() => {});
   }
 }
-function chooseAttachment(file) {
+function chooseAttachment(file, forcedKind = null) {
   if (!file) return;
-  const supportedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'];
-  if (!supportedTypes.includes(file.type)) return showToast('JPEG, PNG, WebP, GIF, AVIF 이미지만 첨부할 수 있어요.');
-  if (file.size > MAX_IMAGE_BYTES) return showToast('이미지는 8MB 이하로 선택해 주세요.');
+  const extension = String(file.name || '').split('.').pop()?.toLowerCase() || '';
+  const mimeByExtension = { mp4: 'video/mp4', webm: 'video/webm', mov: 'video/quicktime' };
+  const mimeType = file.type || mimeByExtension[extension] || '';
+  const imageTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'];
+  const videoTypes = ['video/mp4', 'video/webm', 'video/quicktime'];
+  const kind = forcedKind || (videoTypes.includes(mimeType) ? 'video' : 'image');
+  if (kind === 'image' && !imageTypes.includes(mimeType)) return showToast('JPEG, PNG, WebP, GIF, AVIF 이미지만 첨부할 수 있어요.');
+  if (kind === 'video' && !videoTypes.includes(mimeType)) return showToast('MP4, WebM, MOV 동영상만 첨부할 수 있어요.');
+  const maxBytes = kind === 'video' ? MAX_VIDEO_BYTES : MAX_IMAGE_BYTES;
+  if (file.size > maxBytes) return showToast(kind === 'video' ? '동영상은 25MB 이하로 선택해 주세요.' : '이미지는 8MB 이하로 선택해 주세요.');
   if (state.attachmentUrl) URL.revokeObjectURL(state.attachmentUrl);
   state.attachment = file;
+  state.attachmentKind = kind;
   state.attachmentUrl = URL.createObjectURL(file);
-  ui.thumbnail.src = state.attachmentUrl;
-  ui.attachmentName.textContent = file.name || '붙여넣은 이미지';
+  ui.thumbnail.hidden = kind === 'video';
+  ui.videoThumbnail.hidden = kind !== 'video';
+  if (kind === 'video') {
+    ui.videoThumbnail.src = state.attachmentUrl;
+    ui.videoThumbnail.load();
+  } else {
+    ui.thumbnail.src = state.attachmentUrl;
+  }
+  ui.attachmentName.textContent = file.name || (kind === 'video' ? '동영상 첨부' : '이미지 첨부');
+  const description = document.querySelector('#attachment-description');
+  if (description) description.textContent = kind === 'video' ? '동영상 미리보기 · 최대 25MB' : '이미지 미리보기 · 최대 8MB';
   ui.preview.hidden = false;
   ui.messageInput.focus();
 }
 function clearAttachment() {
   if (state.attachmentUrl) URL.revokeObjectURL(state.attachmentUrl);
   state.attachment = null;
+  state.attachmentKind = null;
   state.attachmentUrl = '';
   ui.thumbnail.removeAttribute('src');
+  ui.thumbnail.hidden = false;
+  ui.videoThumbnail.pause();
+  ui.videoThumbnail.removeAttribute('src');
+  ui.videoThumbnail.load();
+  ui.videoThumbnail.hidden = true;
   ui.preview.hidden = true;
   ui.imageFile.value = '';
+  ui.videoFile.value = '';
 }
 async function removeImages(paths) {
   const usable = [...new Set((paths || []).filter((path) => typeof path === 'string' && path.length))];
@@ -2453,7 +2498,7 @@ function renderAdminPanel() {
     const copy = panelElement('div', 'admin-panel-row-copy');
     const nickname = displayNickname(message.nickname || '익명', Boolean(message.is_verified));
     const meta = `${nickname}${message.is_verified ? ' · 관리자' : ''} · ${formatTime(message.created_at)}`;
-    copy.append(panelElement('strong', message.is_verified ? 'admin-name' : '', meta), panelElement('span', 'admin-panel-row-meta', (message.content || (message.image_path ? '[이미지 첨부]' : '[내용 없음]')).slice(0, 140)));
+    copy.append(panelElement('strong', message.is_verified ? 'admin-name' : '', meta), panelElement('span', 'admin-panel-row-meta', (message.content || (message.image_path ? (/\.(mp4|webm|mov)$/iu.test(message.image_path) ? '[동영상 첨부]' : '[이미지 첨부]') : '[내용 없음]')).slice(0, 140)));
     row.append(copy, panelAction('삭제', 'danger-action', () => deleteMessage(message)));
     list.append(row);
   }
@@ -2714,7 +2759,8 @@ function setupEvents() {
   ui.messageInput.addEventListener('click', updateMentionSuggestions);
   ui.messageInput.addEventListener('blur', () => window.setTimeout(closeMentionPopup, 120));
   ui.mentionPopup.addEventListener('mousedown', (event) => event.preventDefault());
-  ui.imageFile.addEventListener('change', (event) => { chooseAttachment(event.target.files?.[0]); event.target.value = ''; });
+  ui.imageFile.addEventListener('change', (event) => { chooseAttachment(event.target.files?.[0], 'image'); event.target.value = ''; });
+  ui.videoFile.addEventListener('change', (event) => { chooseAttachment(event.target.files?.[0], 'video'); event.target.value = ''; });
   ui.removeAttachment.addEventListener('click', clearAttachment);
   ui.messageInput.addEventListener('paste', (event) => {
     const items = [...(event.clipboardData?.items || [])];
@@ -2724,8 +2770,9 @@ function setupEvents() {
   ui.messages.addEventListener('dragover', (event) => event.preventDefault());
   ui.messages.addEventListener('drop', (event) => {
     event.preventDefault();
-    const image = [...(event.dataTransfer?.files || [])].find((file) => file.type.startsWith('image/'));
-    if (image) chooseAttachment(image);
+    const files = [...(event.dataTransfer?.files || [])];
+    const media = files.find((file) => file.type.startsWith('image/')) || files.find((file) => ['video/mp4', 'video/webm', 'video/quicktime'].includes(file.type));
+    if (media) chooseAttachment(media);
   });
   document.querySelectorAll('[data-account-mode]').forEach((button) => button.addEventListener('click', () => setAccountMode(button.dataset.accountMode)));
   ui.accountNickname.addEventListener('input', updateAdminCodeVisibility);
