@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <link rel="icon" href="/roomchat/icon.svg" type="image/svg+xml" />
   <link rel="manifest" href="/roomchat/manifest.webmanifest" />
-  <link rel="stylesheet" href="/roomchat/styles.css?v=20261025-moderation-sidebar-v1" />
+  <link rel="stylesheet" href="/roomchat/styles.css?v=20261031-video-attachments-v1" />
   <title>RoomChat — 실시간 채팅 커뮤니티</title>
 </head>
 <body>
@@ -129,8 +129,9 @@
         <div id="mention-popup" class="mention-popup" role="listbox" aria-label="멘션할 사람" hidden></div>
         <div id="attachment-preview" class="attachment-preview" hidden>
           <img id="attachment-thumbnail" alt="전송할 이미지 미리보기" />
-          <div class="attachment-meta"><strong id="attachment-name">이미지 첨부</strong><span>메시지에 사진을 추가할 수 있어요</span></div>
-          <button id="remove-attachment" class="icon-button" type="button" aria-label="첨부 이미지 제거">×</button>
+          <video id="attachment-video-thumbnail" muted playsinline preload="metadata" hidden></video>
+          <div class="attachment-meta"><strong id="attachment-name">파일 첨부</strong><span id="attachment-description">전송할 미디어를 미리 확인할 수 있어요</span></div>
+          <button id="remove-attachment" class="icon-button" type="button" aria-label="첨부 파일 제거">×</button>
         </div>
         <div id="paste-hint" class="paste-hint">이미지를 복사한 뒤 이곳에 붙여넣을 수도 있어요.</div>
         <div id="reply-preview" class="reply-preview" hidden aria-live="polite">
@@ -139,6 +140,7 @@
         </div>
         <form id="message-form" class="composer">
           <label class="attach-button" for="image-file" title="이미지 파일 선택" aria-label="이미지 파일 선택"><span aria-hidden="true">＋</span><input id="image-file" type="file" accept="image/*" hidden /></label>
+          <label class="attach-button video-attach-button" for="video-file" title="동영상 파일 선택" aria-label="동영상 파일 선택"><span aria-hidden="true">▶</span><input id="video-file" type="file" accept="video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov" hidden /></label>
           <button id="gif-button" class="attach-button gif-button" type="button" title="GIF 검색" aria-label="GIF 검색">GIF</button>
           <button id="soundboard-button" class="attach-button soundboard-button" type="button" title="MyInstants 사운드보드" aria-label="사운드보드 열기">♪</button>
           <textarea id="message-input" rows="1" maxlength="2000" placeholder="메시지를 입력하세요…" aria-label="메시지 입력"></textarea>
@@ -453,6 +455,6 @@
     </section>
   </dialog>
   <script type="module" src="/roomchat/soundboard.js?v=20261025-moderation-sidebar-v1"></script>
-  <script type="module" src="/roomchat/app.js?v=20261025-moderation-sidebar-v1"></script>
+  <script type="module" src="/roomchat/app.js?v=20261031-video-attachments-v1"></script>
 </body>
 </html>
