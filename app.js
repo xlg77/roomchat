@@ -55,7 +55,7 @@ const ROOM_OWNER_PREFIX = 'roomchat:owner:';
 const ROOM_FAVORITES_KEY = 'roomchat:room-favorites:v1';
 const FIXED_ROOM_NAME = '슬랩배틀 라이벌 입양 피기';
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
-const MAX_VIDEO_BYTES = 25 * 1024 * 1024;
+const MAX_VIDEO_BYTES = 500 * 1024 * 1024;
 const ADMIN_INITIAL_NAMES = new Set(['천사', '크리스탈']);
 const GUIDE_ROOM_NAME = '설명 방';
 const GIF_PREFIX = '[gif]';
@@ -1817,7 +1817,7 @@ async function sendMessage(event) {
       const videoExtensions = { 'video/mp4': 'mp4', 'video/webm': 'webm', 'video/quicktime': 'mov' };
       const extension = (isVideo ? videoExtensions : imageExtensions)[mimeType];
       const maxBytes = isVideo ? MAX_VIDEO_BYTES : MAX_IMAGE_BYTES;
-      if (!extension || image.size > maxBytes) throw new Error(isVideo ? 'MP4, WebM, MOV 동영상은 25MB 이하로 선택해 주세요.' : '이미지 파일 형식 또는 크기를 확인해 주세요.');
+      if (!extension || image.size > maxBytes) throw new Error(isVideo ? 'MP4, WebM, MOV 동영상은 500MB 이하로 선택해 주세요.' : '이미지 파일 형식 또는 크기를 확인해 주세요.');
       imagePath = `${state.room.id}/${crypto.randomUUID()}.${extension}`;
       const { error: uploadError } = await supabase.storage.from('chat-images').upload(imagePath, image, {
         contentType: mimeType, cacheControl: '3600', upsert: false,
@@ -1971,7 +1971,7 @@ function chooseAttachment(file, forcedKind = null) {
   if (kind === 'image' && !imageTypes.includes(mimeType)) return showToast('JPEG, PNG, WebP, GIF, AVIF 이미지만 첨부할 수 있어요.');
   if (kind === 'video' && !videoTypes.includes(mimeType)) return showToast('MP4, WebM, MOV 동영상만 첨부할 수 있어요.');
   const maxBytes = kind === 'video' ? MAX_VIDEO_BYTES : MAX_IMAGE_BYTES;
-  if (file.size > maxBytes) return showToast(kind === 'video' ? '동영상은 25MB 이하로 선택해 주세요.' : '이미지는 8MB 이하로 선택해 주세요.');
+  if (file.size > maxBytes) return showToast(kind === 'video' ? '동영상은 500MB 이하로 선택해 주세요.' : '이미지는 8MB 이하로 선택해 주세요.');
   if (state.attachmentUrl) URL.revokeObjectURL(state.attachmentUrl);
   state.attachment = file;
   state.attachmentKind = kind;
@@ -1986,7 +1986,7 @@ function chooseAttachment(file, forcedKind = null) {
   }
   ui.attachmentName.textContent = file.name || (kind === 'video' ? '동영상 첨부' : '이미지 첨부');
   const description = document.querySelector('#attachment-description');
-  if (description) description.textContent = kind === 'video' ? '동영상 미리보기 · 최대 25MB' : '이미지 미리보기 · 최대 8MB';
+  if (description) description.textContent = kind === 'video' ? '동영상 미리보기 · 최대 500MB' : '이미지 미리보기 · 최대 8MB';
   ui.preview.hidden = false;
   ui.messageInput.focus();
 }
