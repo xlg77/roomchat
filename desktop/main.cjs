@@ -1,4 +1,4 @@
-const { app, BrowserWindow, shell, session, Menu, globalShortcut } = require("electron");
+const { app, BrowserWindow, shell, session, Menu, globalShortcut, dialog } = require("electron");
 
 const APP_URL = "https://xlg77.github.io/roomchat/";
 const APP_ORIGIN = new URL(APP_URL).origin;
@@ -174,7 +174,40 @@ app.whenReady().then(() => {
   });
 
   createWindow();
-  globalShortcut.register("CommandOrControl+Shift+O", () => setOverlayMode(!overlayMode));
+  const toggleOverlay = () => {
+    if (!mainWindow || mainWindow.isDestroyed()) return;
+    setOverlayMode(!overlayMode);
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.show();
+    mainWindow.focus();
+  };
+
+  // Windows에서는 명시적인 Control 조합으로 등록하고, 충돌 시 대체 키를 사용한다.
+  const primaryShortcut = process.platform === "darwin"
+    ? "Command+Shift+O"
+    : "Control+Shift+O";
+  const fallbackShortcut = process.platform === "darwin"
+    ? "Command+Option+O"
+    : "Control+Alt+O";
+
+  let shortcutRegistered = globalShortcut.register(primaryShortcut, toggleOverlay);
+  let registeredShortcut = shortcutRegistered ? primaryShortcut : null;
+
+  if (!shortcutRegistered) {
+    shortcutRegistered = globalShortcut.register(fallbackShortcut, toggleOverlay);
+    if (shortcutRegistered) registeredShortcut = fallbackShortcut;
+  }
+
+  if (!shortcutRegistered) {
+    dialog.showMessageBox({
+      type: "warning",
+      title: "RoomChat 단축키 등록 실패",
+      message: "오버레이 단축키를 등록하지 못했습니다.",
+      detail: "다른 프로그램이 단축키를 사용 중일 수 있습니다. RoomChat 메뉴의 '보기 → 채팅 오버레이 모드 전환'을 사용해 주세요."
+    });
+  } else {
+    app.commandLine.appendSwitch("roomchat-overlay-shortcut", registeredShortcut);
+  }
 
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
