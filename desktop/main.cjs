@@ -1,4 +1,5 @@
-const { app, BrowserWindow, shell, session, Menu, dialog } = require("electron");
+const { app, BrowserWindow, shell, session, Menu, dialog, ipcMain } = require("electron");
+const path = require("path");
 const { autoUpdater } = require("electron-updater");
 
 const APP_URL = "https://xlg77.github.io/roomchat/";
@@ -74,6 +75,18 @@ let mainWindow = null;
 let toggleButtonWindow = null;
 let overlayMode = false;
 let normalBounds = { width: 1440, height: 900, x: undefined, y: undefined };
+let overlayDragState = null;
+
+ipcMain.on("roomchat-overlay-drag", (event, phase, screenX, screenY) => {
+  if (!mainWindow || mainWindow.isDestroyed() || event.sender !== mainWindow.webContents || !overlayMode) return;
+  if (!Number.isFinite(screenX) || !Number.isFinite(screenY)) return;
+  if (phase === "start") {
+    const bounds = mainWindow.getBounds();
+    overlayDragState = { pointerX: screenX, pointerY: screenY, windowX: bounds.x, windowY: bounds.y };
+  } else if (phase === "move" && overlayDragState) {
+    mainWindow.setPosition(Math.round(overlayDragState.windowX + screenX - overlayDragState.pointerX), Math.round(overlayDragState.windowY + screenY - overlayDragState.pointerY));
+  } else if (phase === "end") overlayDragState = null;
+});
 
 function isTrustedAppUrl(value) {
   try {
@@ -128,6 +141,7 @@ function applyOverlayStyles() {
         bar.id='roomchat-overlay-toolbar';
         bar.innerHTML='<span class="overlay-drag-handle" title="여기를 잡고 오버레이 창 이동">RoomChat · 오버레이</span><button type="button" title="채팅">◇</button><span class="overlay-controls"><button type="button" data-action="fold" title="접기">－</button></span>';
         panel.prepend(bar);
+        bar.querySelector('.overlay-drag-handle').addEventListener('mousedown',event=>{if(event.button!==0)return;event.preventDefault();window.roomchatOverlay?.beginDrag(event.screenX,event.screenY);const move=e=>window.roomchatOverlay?.moveDrag(e.screenX,e.screenY);const end=e=>{window.roomchatOverlay?.endDrag(e.screenX,e.screenY);window.removeEventListener('mousemove',move,true);window.removeEventListener('mouseup',end,true);};window.addEventListener('mousemove',move,true);window.addEventListener('mouseup',end,true);});
         bar.addEventListener('click',event=>{
           const action=event.target?.dataset?.action;
           if(action==='fold') panel.classList.add('roomchat-overlay-folded');
@@ -219,6 +233,7 @@ function createWindow() {
       nodeIntegration: false,
       contextIsolation: true,
       sandbox: true,
+      preload: path.join(__dirname, "preload.cjs"),
       webviewTag: false,
       spellcheck: true
     }
