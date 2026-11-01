@@ -8,7 +8,7 @@ on:
       - ".github/workflows/android-overlay.yml"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -27,9 +27,12 @@ jobs:
           gradle-version: "8.9"
       - name: Build debug APK
         run: gradle -p android-overlay :app:assembleDebug
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
+      - name: Publish APK release
+        uses: softprops/action-gh-release@v2
         with:
-          name: roomchat-android-overlay-debug
-          path: android-overlay/app/build/outputs/apk/debug/app-debug.apk
-          if-no-files-found: error
+          tag_name: roomchat-android-overlay-v1.0.0
+          name: RoomChat Android 오버레이 v1.0.0
+          prerelease: true
+          make_latest: false
+          files: android-overlay/app/build/outputs/apk/debug/app-debug.apk
+          fail_on_unmatched_files: true
