@@ -32,13 +32,22 @@ jobs:
         working-directory: desktop
         run: npm run dist
 
+      - name: Read desktop app version
+        id: get_version
+        working-directory: desktop
+        shell: bash
+        run: echo "version=$(node -p \"require('./package.json').version\")" >> "$GITHUB_OUTPUT"
+
       - name: Publish Windows installer
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: roomchat-desktop-v1.0.1
-          name: RoomChat Windows 앱 v1.0.1
+          tag_name: roomchat-desktop-v${{ steps.get_version.outputs.version }}
+          name: RoomChat Windows 앱
           prerelease: false
           make_latest: true
           overwrite_files: true
-          files: desktop/dist/RoomChat-Setup-1.0.1.exe
+          files: |
+            desktop/dist/*.exe
+            desktop/dist/*.blockmap
+            desktop/dist/latest.yml
           fail_on_unmatched_files: true
