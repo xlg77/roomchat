@@ -39,6 +39,18 @@ function setupAutoUpdates() {
   if (!app.isPackaged) return;
   autoUpdater.autoDownload = true;
   autoUpdater.autoInstallOnAppQuit = true;
+  let updateCheckInProgress = false;
+  const checkForUpdates = async () => {
+    if (updateCheckInProgress) return;
+    updateCheckInProgress = true;
+    try {
+      await autoUpdater.checkForUpdates();
+    } catch (error) {
+      console.error("[RoomChat update check]", error);
+    } finally {
+      updateCheckInProgress = false;
+    }
+  };
   autoUpdater.on("error", (error) => console.error("[RoomChat updater]", error));
   autoUpdater.on("update-downloaded", async () => {
     const choice = await dialog.showMessageBox(mainWindow, {
@@ -52,8 +64,9 @@ function setupAutoUpdates() {
     });
     if (choice.response === 0) autoUpdater.quitAndInstall();
   });
-  setTimeout(() => autoUpdater.checkForUpdates().catch((error) => console.error("[RoomChat update check]", error)), 12000);
-  setInterval(() => autoUpdater.checkForUpdates().catch((error) => console.error("[RoomChat update check]", error)), 6 * 60 * 60 * 1000);
+  // Check shortly after launch, then retry every minute.
+  setTimeout(checkForUpdates, 5000);
+  setInterval(checkForUpdates, 60 * 1000);
 }
 
 
