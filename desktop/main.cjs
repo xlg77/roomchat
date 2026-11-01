@@ -1,4 +1,5 @@
-const { app, BrowserWindow, shell, session, Menu } = require("electron");
+const { app, BrowserWindow, shell, session, Menu, dialog } = require("electron");
+const { autoUpdater } = require("electron-updater");
 
 const APP_URL = "https://xlg77.github.io/roomchat/";
 const APP_ORIGIN = new URL(APP_URL).origin;
@@ -33,6 +34,28 @@ const OVERLAY_CSS = `
 
 app.setName("RoomChat");
 app.setAppUserModelId("com.xlg77.roomchat");
+
+function setupAutoUpdates() {
+  if (!app.isPackaged) return;
+  autoUpdater.autoDownload = true;
+  autoUpdater.autoInstallOnAppQuit = true;
+  autoUpdater.on("error", (error) => console.error("[RoomChat updater]", error));
+  autoUpdater.on("update-downloaded", async () => {
+    const choice = await dialog.showMessageBox(mainWindow, {
+      type: "info",
+      buttons: ["지금 재시작", "나중에"],
+      defaultId: 0,
+      cancelId: 1,
+      title: "RoomChat 업데이트 준비 완료",
+      message: "새 버전 다운로드가 완료됐어요.",
+      detail: "지금 재시작하면 RoomChat이 자동으로 업데이트됩니다."
+    });
+    if (choice.response === 0) autoUpdater.quitAndInstall();
+  });
+  setTimeout(() => autoUpdater.checkForUpdates().catch((error) => console.error("[RoomChat update check]", error)), 12000);
+  setInterval(() => autoUpdater.checkForUpdates().catch((error) => console.error("[RoomChat update check]", error)), 6 * 60 * 60 * 1000);
+}
+
 
 let mainWindow = null;
 let toggleButtonWindow = null;
@@ -270,6 +293,7 @@ app.whenReady().then(() => {
   });
 
   createWindow();
+  setupAutoUpdates();
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
