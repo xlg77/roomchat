@@ -1168,7 +1168,15 @@ async function loadRooms() {
   state.rooms = data || [];
   renderRoomLists();
   if (!state.room && state.rooms.length) {
-    const room = sortedRooms().find((item) => item.is_featured) || sortedRooms()[0];
+    const isOverlay = new URLSearchParams(window.location.search).get('overlay') === '1';
+    let preferredRoom = null;
+    if (isOverlay) {
+      try {
+        const savedId = localStorage.getItem('roomchat:overlay-selected-room:v1');
+        preferredRoom = state.rooms.find((item) => String(item.id) === String(savedId)) || null;
+      } catch {}
+    }
+    const room = preferredRoom || sortedRooms().find((item) => item.is_featured) || sortedRooms()[0];
     await switchRoom(room);
   }
 }
@@ -1525,6 +1533,19 @@ async function switchRoom(room) {
   if (state.nickname) await subscribeCurrentRoom(request);
   if (ui.adminPanelDialog.open) renderAdminPanel();
 }
+// Native Android overlay bridge: the native room picker calls this API.
+window.RoomChatOverlay = {
+  getRooms() {
+    return sortedRooms().map((room) => ({ id: String(room.id), name: String(room.name || '이름 없는 방') }));
+  },
+  async selectRoom(roomId) {
+    const room = state.rooms.find((item) => String(item.id) === String(roomId));
+    if (!room) return false;
+    try { localStorage.setItem('roomchat:overlay-selected-room:v1', String(room.id)); } catch {}
+    await switchRoom(room);
+    return true;
+  },
+};
 async function createRoom(name, parentRoomId = null, unlimitedMessages = false) {
   const cleanName = [...name.trim().replace(/\s+/gu, ' ')].slice(0, 32).join('');
   if (cleanName.length < 2 || cleanName.length > 32) return showToast('방 이름은 2~32자로 입력해 주세요.');
