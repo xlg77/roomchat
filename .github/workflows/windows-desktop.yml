@@ -35,10 +35,10 @@ jobs:
       - name: Publish Windows installer
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: roomchat-desktop-v1.0.0
-          name: RoomChat Windows 앱 v1.0.0
+          tag_name: roomchat-desktop-v1.0.1
+          name: RoomChat Windows 앱 v1.0.1
           prerelease: false
           make_latest: true
           overwrite_files: true
-          files: desktop/dist/RoomChat-Setup-1.0.0.exe
+          files: desktop/dist/RoomChat-Setup-1.0.1.exe
           fail_on_unmatched_files: true
