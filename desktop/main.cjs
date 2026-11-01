@@ -152,6 +152,9 @@ function setOverlayMode(enabled) {
     normalBounds = mainWindow.getBounds();
     overlayMode = true;
     mainWindow.setAlwaysOnTop(true, "screen-saver");
+    mainWindow.setOpacity(0.88);
+    mainWindow.setBackgroundColor("#00000000");
+    mainWindow.setIgnoreMouseEvents(false);
     mainWindow.setMinimumSize(360, 220);
     mainWindow.setResizable(true);
     mainWindow.setSize(400, 260);
@@ -163,6 +166,9 @@ function setOverlayMode(enabled) {
   } else {
     overlayMode = false;
     mainWindow.setAlwaysOnTop(false);
+    mainWindow.setOpacity(1);
+    mainWindow.setBackgroundColor("#e8f8ff");
+    mainWindow.setIgnoreMouseEvents(false);
     mainWindow.setMinimumSize(900, 640);
     mainWindow.setResizable(true);
     mainWindow.setSize(Math.max(900, normalBounds.width), Math.max(640, normalBounds.height));
