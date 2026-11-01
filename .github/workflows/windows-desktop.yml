@@ -10,6 +10,11 @@ on:
 permissions:
   contents: write
 
+# Prevent overlapping Windows releases from overwriting the latest marker.
+concurrency:
+  group: roomchat-windows-release
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: windows-latest
