@@ -28,6 +28,9 @@ const ui = {
   accountRecoveryCodeOpen: $('#account-recovery-code-open'), accountRecoveryCodeDialog: $('#account-recovery-code-dialog'),
   accountRecoveryCodeIssue: $('#account-recovery-code-issue'), accountRecoveryCodeValue: $('#account-recovery-code-value'),
   accountRecoveryCodeCopy: $('#account-recovery-code-copy'), accountRecoveryCodeClose: $('#account-recovery-code-close'),
+  accountPasswordChangeOpen: $('#account-password-change-open'), accountPasswordChangeDialog: $('#account-password-change-dialog'),
+  accountPasswordChangeForm: $('#account-password-change-form'), accountNewPassword: $('#account-new-password'),
+  accountNewPasswordConfirm: $('#account-new-password-confirm'), accountPasswordChangeSubmit: $('#account-password-change-submit'),
   roomDialog: $('#room-dialog'), roomForm: $('#room-form'), roomInput: $('#room-input'),
   roomDelete: $('#room-delete-button'), childRoomButton: $('#new-child-room-button'), roomUnlimitedChoice: $('#room-unlimited-choice'), membersDialog: $('#members-dialog'), memberList: $('#member-list'),
   membersNote: $('#members-note'), membersClose: $('#members-close-button'), notificationButton: $('#notification-button'),
@@ -1618,6 +1621,7 @@ function updateIdentityUI() {
   ui.adminPanelButton.hidden = !state.isAdmin;
   ui.avatarSection.hidden = !state.user;
   ui.accountRecoveryCodeOpen.hidden = !state.user;
+  ui.accountPasswordChangeOpen.hidden = !state.user;
   ui.styleOpen.hidden = !state.user;
   if (state.user) loadAvatars([state.user.id]);
   applyAvatars();
@@ -2596,6 +2600,38 @@ function setupEvents() {
     ui.accountRecoveryCodeDialog.showModal();
   });
   ui.accountRecoveryCodeClose.addEventListener('click', () => ui.accountRecoveryCodeDialog.close());
+  ui.accountPasswordChangeOpen.addEventListener('click', () => {
+    if (!state.user) return showToast('로그인한 계정에서만 비밀번호를 변경할 수 있어요.');
+    ui.accountNewPassword.value = '';
+    ui.accountNewPasswordConfirm.value = '';
+    ui.accountPasswordChangeDialog.showModal();
+    ui.accountNewPassword.focus();
+  });
+  $('#account-password-change-cancel').addEventListener('click', () => ui.accountPasswordChangeDialog.close());
+  ui.accountPasswordChangeForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!state.user) return showToast('로그인 상태를 확인해 주세요.');
+    const password = ui.accountNewPassword.value;
+    const confirmPassword = ui.accountNewPasswordConfirm.value;
+    if (password.length < 8 || new TextEncoder().encode(password).length > 72) return showToast('새 비밀번호는 8~72바이트로 입력해 주세요.');
+    if (password !== confirmPassword) return showToast('새 비밀번호가 서로 일치하지 않아요.');
+    ui.accountPasswordChangeSubmit.disabled = true;
+    try {
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      if (sessionError || !accessToken) throw new Error('로그인 세션이 만료되었어요. 다시 로그인해 주세요.');
+      await callRecoveryRequest({ action: 'change_password', password }, accessToken);
+      ui.accountPasswordChangeDialog.close();
+      ui.accountNewPassword.value = '';
+      ui.accountNewPasswordConfirm.value = '';
+      showToast('비밀번호를 변경했어요. 다음 로그인부터 새 비밀번호를 사용하세요.');
+    } catch (error) {
+      showToast(errorText(error, '비밀번호를 변경하지 못했어요.'));
+    } finally {
+      ui.accountPasswordChangeSubmit.disabled = false;
+    }
+  });
+
   ui.accountRecoveryCodeIssue.addEventListener('click', async () => {
     if (!state.user) return showToast('로그인 상태를 확인해 주세요.');
     if (!window.confirm('새 복구 코드를 발급하면 이전 코드는 즉시 사용할 수 없게 됩니다. 계속할까요?')) return;
