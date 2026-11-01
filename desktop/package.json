@@ -1,6 +1,6 @@
 {
   "name": "roomchat-desktop",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "RoomChat Windows desktop application",
   "main": "main.cjs",
@@ -27,7 +27,9 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "artifactName": "RoomChat-Setup-${version}.${ext}"
