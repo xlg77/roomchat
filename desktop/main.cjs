@@ -7,28 +7,29 @@ const APP_ORIGIN = new URL(APP_URL).origin;
 const OVERLAY_CSS = `
 html,body{width:100%!important;height:100%!important;margin:0!important;padding:0!important;overflow:hidden!important;background:transparent!important}
 #app-loading{display:none!important}
-.app-shell{display:block!important;width:100%!important;height:100vh!important;min-height:0!important;margin:0!important;padding:0!important;overflow:hidden!important}
+.app-shell{display:block!important;width:100%!important;height:100vh!important;min-height:0!important;margin:0!important;padding:0!important;overflow:hidden!important;background:transparent!important;box-shadow:none!important}
 .app-shell>:not(.chat-panel){display:none!important}
 .chat-panel{display:block!important;position:relative!important;width:100%!important;height:100%!important;min-width:0!important;min-height:0!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;background:transparent!important;overflow:hidden!important}
 .chat-panel>:not(#message-list):not(.composer-wrap):not(#roomchat-overlay-toolbar):not(#roomchat-overlay-restore){display:none!important}
-#roomchat-overlay-toolbar{position:absolute!important;top:6px!important;left:8px!important;right:8px!important;z-index:5!important;display:flex!important;align-items:center!important;gap:7px!important;height:25px!important;padding:0 5px!important;background:rgba(0,0,0,.28)!important;border-radius:6px!important;-webkit-app-region:no-drag!important;cursor:move!important}
-#roomchat-overlay-toolbar .overlay-drag-handle{display:inline-flex!important;align-items:center!important;flex:1 1 auto!important;height:25px!important;padding-left:5px!important;color:#fff!important;font:700 12px Segoe UI,Arial,sans-serif!important;letter-spacing:.2px!important;-webkit-app-region:no-drag!important;user-select:none!important}
-#roomchat-overlay-toolbar button{display:inline-flex!important;align-items:center!important;justify-content:center!important;width:25px!important;height:25px!important;margin:0!important;padding:0!important;border:0!important;border-radius:6px!important;background:rgba(255,255,255,.94)!important;color:#222!important;box-shadow:0 1px 4px #0005!important;cursor:pointer!important;font:700 17px Arial,sans-serif!important;-webkit-app-region:no-drag!important}
+#roomchat-overlay-toolbar{position:absolute!important;top:0!important;left:0!important;right:0!important;z-index:5!important;display:flex!important;align-items:center!important;gap:4px!important;height:20px!important;padding:0 3px!important;background:rgba(0,0,0,.34)!important;border-radius:0!important;-webkit-app-region:no-drag!important;cursor:move!important}
+#roomchat-overlay-toolbar .overlay-drag-handle{display:inline-flex!important;align-items:center!important;flex:1 1 auto!important;height:20px!important;padding-left:4px!important;color:rgba(255,255,255,.9)!important;font:600 10px Segoe UI,Arial,sans-serif!important;letter-spacing:.1px!important;-webkit-app-region:no-drag!important;user-select:none!important}
+#roomchat-overlay-toolbar button{display:inline-flex!important;align-items:center!important;justify-content:center!important;width:19px!important;height:18px!important;margin:0!important;padding:0!important;border:0!important;border-radius:3px!important;background:rgba(255,255,255,.82)!important;color:#222!important;box-shadow:none!important;cursor:pointer!important;font:700 13px Arial,sans-serif!important;-webkit-app-region:no-drag!important}
 #roomchat-overlay-toolbar .overlay-controls{display:flex!important;margin-left:auto!important}
-#roomchat-overlay-toolbar .overlay-controls button{background:rgba(25,25,25,.58)!important;color:#fff!important}
-#message-list{position:absolute!important;top:37px!important;left:8px!important;right:40px!important;bottom:43px!important;display:block!important;min-height:0!important;height:auto!important;max-height:none!important;overflow-y:auto!important;overflow-x:hidden!important;padding:5px 7px!important;margin:0!important;background:rgba(0,0,0,.55)!important;border:0!important;border-radius:0!important;color:#fff!important}
-#message-list:empty:before{content:"Chat /? or /help for a list of chat commands.";display:block;color:#f4f4f4;font:600 13px Georgia,serif;line-height:17px}
-.message-item{max-width:100%!important;margin:0 0 2px!important;padding:0!important;background:transparent!important;border:0!important;box-shadow:none!important;color:#fff!important;font:600 13px Georgia,serif!important}
+#roomchat-overlay-toolbar .overlay-controls button{background:rgba(30,30,30,.58)!important;color:#fff!important}
+#message-list{position:absolute!important;top:20px!important;left:0!important;right:0!important;bottom:31px!important;display:block!important;min-height:0!important;height:auto!important;max-height:none!important;overflow-y:auto!important;overflow-x:hidden!important;padding:7px 8px!important;margin:0!important;background:rgba(0,0,0,.56)!important;border:0!important;border-radius:0!important;color:#fff!important}
+#message-list:empty:before{content:"Please chat '/?' for a list of chat commands.";display:block;color:#f4f4f4;font:600 11px Georgia,serif;line-height:14px}
+.message-item{display:block!important;max-width:100%!important;margin:0 0 2px!important;padding:0!important;background:transparent!important;border:0!important;box-shadow:none!important;color:#fff!important;font:600 11px Georgia,serif!important;line-height:14px!important}
 .message-content{overflow-wrap:anywhere!important;word-break:normal!important;color:#fff!important}
-.composer-wrap{position:absolute!important;left:8px!important;right:40px!important;bottom:7px!important;z-index:4!important;display:block!important;margin:0!important;padding:0!important;background:transparent!important;border:0!important}
+.message-item button,.message-item [role="button"],.message-item .actions,.message-item .message-actions,.message-item .message-menu,.message-item .message-tools,.message-item .action-menu,.message-item .context-actions{display:none!important}
+.composer-wrap{position:absolute!important;left:0!important;right:0!important;bottom:0!important;z-index:4!important;display:block!important;margin:0!important;padding:3px 0 0!important;background:transparent!important;border:0!important}
 .composer-wrap form{display:flex!important;gap:0!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important}
 .composer-wrap form>:not(#message-input):not(#send-button){display:none!important}
-#message-input{display:block!important;flex:1 1 auto!important;width:100%!important;min-width:0!important;height:29px!important;min-height:29px!important;max-height:29px!important;margin:0!important;padding:4px 7px!important;border:0!important;border-radius:0!important;outline:none!important;resize:none!important;background:rgba(225,225,225,.78)!important;color:#222!important;font:600 13px Georgia,serif!important;box-shadow:none!important}
+#message-input{display:block!important;flex:1 1 auto!important;width:100%!important;min-width:0!important;height:28px!important;min-height:28px!important;max-height:28px!important;margin:0!important;padding:4px 7px!important;border:1px solid rgba(40,40,40,.45)!important;border-radius:0!important;outline:none!important;resize:none!important;background:rgba(225,225,225,.82)!important;color:#222!important;font:600 11px Georgia,serif!important;box-shadow:none!important}
 #message-input::placeholder{color:#555!important;opacity:1!important}
 #send-button{display:none!important}
 .composer-foot,.toast,.mention-popup{display:none!important}
 .chat-panel.roomchat-overlay-folded #message-list,.chat-panel.roomchat-overlay-folded .composer-wrap{display:none!important}
-#roomchat-overlay-restore{display:none!important;position:absolute!important;right:8px!important;bottom:8px!important;width:38px!important;height:38px!important;border:0!important;border-radius:50%!important;background:#2676c9!important;color:#fff!important;font-size:18px!important}
+#roomchat-overlay-restore{display:none!important;position:absolute!important;right:5px!important;bottom:5px!important;width:28px!important;height:28px!important;border:0!important;border-radius:50%!important;background:#2676c9!important;color:#fff!important;font-size:15px!important}
 .chat-panel.roomchat-overlay-folded #roomchat-overlay-restore{display:flex!important;align-items:center!important;justify-content:center!important}
 `;
 
@@ -170,10 +171,11 @@ function setOverlayMode(enabled) {
     mainWindow.setOpacity(0.88);
     mainWindow.setBackgroundColor("#00000000");
     mainWindow.setIgnoreMouseEvents(false);
-    mainWindow.setMinimumSize(360, 220);
-    mainWindow.setResizable(true);
-    mainWindow.setSize(400, 260);
-    mainWindow.center();
+    mainWindow.setMinimumSize(360, 200);
+    mainWindow.setMaximumSize(360, 200);
+    mainWindow.setResizable(false);
+    mainWindow.setSize(360, 200);
+    mainWindow.setPosition(20, 20);
     mainWindow.setTitle("RoomChat · 채팅 오버레이");
     mainWindow.setMenuBarVisibility(false);
     applyOverlayStyles();
@@ -184,6 +186,7 @@ function setOverlayMode(enabled) {
     mainWindow.setOpacity(1);
     mainWindow.setBackgroundColor("#e8f8ff");
     mainWindow.setIgnoreMouseEvents(false);
+    mainWindow.setMaximumSize(0, 0);
     mainWindow.setMinimumSize(900, 640);
     mainWindow.setResizable(true);
     mainWindow.setSize(Math.max(900, normalBounds.width), Math.max(640, normalBounds.height));
