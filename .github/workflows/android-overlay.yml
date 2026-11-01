@@ -30,8 +30,8 @@ jobs:
       - name: Publish APK release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: roomchat-android-overlay-v1.0.1
-          name: RoomChat Android 오버레이 v1.0.1
+          tag_name: roomchat-android-overlay-v1.0.2
+          name: RoomChat Android 오버레이 v1.0.2
           prerelease: true
           make_latest: false
           files: android-overlay/app/build/outputs/apk/debug/app-debug.apk
