@@ -94,7 +94,7 @@ Deno.serve(async (request: Request) => {
       if (!passwordIsValid(password)) {
         return jsonResponse({ error: "새 비밀번호는 8~72바이트로 입력해 주세요." }, 400, origin);
       }
-      const accessToken = request.headers.get("authorization")?.replace(/^Bearer\\s+/iu, "") || "";
+      const accessToken = request.headers.get("authorization")?.replace(/^Bearer\s+/iu, "") || "";
       const { data: authData, error: authError } = accessToken
         ? await admin.auth.getUser(accessToken)
         : { data: { user: null }, error: new Error("Missing access token") };
