@@ -52,6 +52,26 @@ html,body{width:100%!important;height:100%!important;margin:0!important;padding:
 .message-content{display:inline!important;margin:0!important;padding:0!important;color:#fff!important;font:500 14px/20px "Segoe UI",Arial,sans-serif!important;white-space:normal!important;overflow-wrap:anywhere!important;word-break:normal!important;text-shadow:0 1px 3px rgba(0,0,0,.95)!important}
 .message-content *, .message-content a,.message-content .mention{color:#fff!important;text-shadow:0 1px 3px rgba(0,0,0,.95)!important}
 .message-row .message-reactions,.message-row .admin-action,.message-row button,.message-row [role=button]{display:none!important}
+
+/* Final overlay text override: beat website nickname-gradient and dark-theme fill rules. */
+#message-list .message-row .message-meta,
+#message-list .message-row .message-meta .styled-name,
+#message-list .message-row .message-meta .styled-name::before,
+#message-list .message-row .message-meta .styled-name::after{
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+  text-shadow:0 1px 3px rgba(0,0,0,.95)!important;
+}
+#message-list .message-row .message-meta .styled-name::before{content:"["!important}
+#message-list .message-row .message-meta .styled-name::after{content:"]:"!important;margin-right:3px!important}
+#message-list .message-row .message-content,
+#message-list .message-row .message-content *,
+#message-list .message-row .message-content a,
+#message-list .message-row .message-content .mention{
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+  text-shadow:0 1px 3px rgba(0,0,0,.95)!important;
+}
 `;
 
 
