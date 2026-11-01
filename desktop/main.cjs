@@ -38,6 +38,20 @@ html,body{width:100%!important;height:100%!important;margin:0!important;padding:
 .chat-panel.roomchat-overlay-folded #message-list,.chat-panel.roomchat-overlay-folded .composer-wrap{display:none!important}
 #roomchat-overlay-restore{display:none!important;position:absolute!important;right:5px!important;bottom:5px!important;width:28px!important;height:28px!important;border:0!important;border-radius:50%!important;background:#2676c9!important;color:#fff!important;font-size:15px!important}
 .chat-panel.roomchat-overlay-folded #roomchat-overlay-restore{display:flex!important;align-items:center!important;justify-content:center!important}
+
+
+/* Roblox-like inline nickname and high-contrast chat text */
+#message-list{background:rgba(0,0,0,.82)!important;color:#fff!important}
+.message-row{display:block!important;color:#fff!important;font-size:14px!important;line-height:20px!important;text-shadow:0 1px 3px rgba(0,0,0,.95)!important}
+.message-body{display:block!important;width:100%!important;min-width:0!important}
+.message-meta{display:inline!important;margin:0 5px 0 0!important;padding:0!important;vertical-align:baseline!important}
+.message-meta .styled-name{display:inline!important;color:#fff!important;font:700 14px/20px "Segoe UI",Arial,sans-serif!important;text-shadow:0 1px 3px #000!important}
+.message-meta .styled-name::before{content:"["!important;color:#fff!important}
+.message-meta .styled-name::after{content:"]:"!important;margin-right:3px!important;color:#fff!important}
+.message-meta .tag-slot,.message-meta time,.message-meta .message-edited,.message-meta .message-pinned-label,.message-meta .verified-mark,.message-meta .verified-badge,.message-meta .admin-verified-mark{display:none!important}
+.message-content{display:inline!important;margin:0!important;padding:0!important;color:#fff!important;font:500 14px/20px "Segoe UI",Arial,sans-serif!important;white-space:normal!important;overflow-wrap:anywhere!important;word-break:normal!important;text-shadow:0 1px 3px rgba(0,0,0,.95)!important}
+.message-content *, .message-content a,.message-content .mention{color:#fff!important;text-shadow:0 1px 3px rgba(0,0,0,.95)!important}
+.message-row .message-reactions,.message-row .admin-action,.message-row button,.message-row [role=button]{display:none!important}
 `;
 
 
