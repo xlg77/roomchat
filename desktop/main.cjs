@@ -50,7 +50,7 @@ function isTrustedAppUrl(value) {
 function injectOverlayToggleButton() {
   if (!mainWindow || mainWindow.isDestroyed()) return;
   const label = overlayMode ? "오버레이 끄기" : "오버레이 켜기";
-  const script = '(function(){let b=document.getElementById("roomchat-overlay-toggle");if(!b){b=document.createElement("button");b.id="roomchat-overlay-toggle";b.type="button";b.addEventListener("click",()=>window.open("roomchat://toggle-overlay"));document.body.appendChild(b);}b.textContent=' + JSON.stringify(label) + ';b.title="RoomChat 오버레이 모드 전환";})();';
+  const script = '(function(){let b=document.getElementById("roomchat-overlay-toggle");if(!b){b=document.createElement("button");b.id="roomchat-overlay-toggle";b.type="button";b.addEventListener("click",()=>window.open("roomchat://toggle-overlay"));document.body.appendChild(b);}b.textContent=' + JSON.stringify(label) + ';b.title="RoomChat 오버레이 모드 전환";b.style.cssText="position:fixed;top:10px;right:12px;z-index:2147483647;padding:8px 13px;border:0;border-radius:9px;background:#2676c9;color:#fff;font:600 12px Arial,sans-serif;box-shadow:0 2px 10px #0003;cursor:pointer;-webkit-app-region:no-drag";})();';
   mainWindow.webContents.executeJavaScript(script).catch(() => {});
 }
 function applyOverlayStyles() {
