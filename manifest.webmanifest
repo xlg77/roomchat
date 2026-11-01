@@ -1,13 +1,28 @@
 {
-  "name": "roomchat — 가볍게 모이는 대화",
-  "short_name": "roomchat",
+  "name": "RoomChat — 모바일 채팅",
+  "short_name": "RoomChat",
   "lang": "ko-KR",
-  "start_url": "./",
-  "scope": "./",
+  "start_url": "/roomchat/",
+  "scope": "/roomchat/",
   "display": "standalone",
   "background_color": "#f5f4ef",
   "theme_color": "#f5f4ef",
   "icons": [
-    { "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+    {
+      "src": "/roomchat/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "description": "모바일에서 앱처럼 실행하는 RoomChat 실시간 채팅",
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
+  "orientation": "any",
+  "categories": [
+    "social",
+    "communication"
   ]
 }
