@@ -25,9 +25,6 @@ const ui = {
   accountRecoveryNickname: $('#account-recovery-nickname'), accountRecoveryCode: $('#account-recovery-code'),
   accountRecoveryPassword: $('#account-recovery-password'), accountRecoveryCancel: $('#account-recovery-cancel'),
   accountRecoverySubmit: $('#account-recovery-submit'),
-  accountRecoveryCodeOpen: $('#account-recovery-code-open'), accountRecoveryCodeDialog: $('#account-recovery-code-dialog'),
-  accountRecoveryCodeIssue: $('#account-recovery-code-issue'), accountRecoveryCodeValue: $('#account-recovery-code-value'),
-  accountRecoveryCodeCopy: $('#account-recovery-code-copy'), accountRecoveryCodeClose: $('#account-recovery-code-close'),
   accountPasswordChangeOpen: $('#account-password-change-open'), accountPasswordChangeDialog: $('#account-password-change-dialog'),
   accountPasswordChangeForm: $('#account-password-change-form'), accountNewPassword: $('#account-new-password'),
   accountNewPasswordConfirm: $('#account-new-password-confirm'), accountPasswordChangeSubmit: $('#account-password-change-submit'),
@@ -1620,7 +1617,6 @@ function updateIdentityUI() {
   ui.signOut.hidden = !state.user;
   ui.adminPanelButton.hidden = !state.isAdmin;
   ui.avatarSection.hidden = !state.user;
-  ui.accountRecoveryCodeOpen.hidden = !state.user;
   ui.accountPasswordChangeOpen.hidden = !state.user;
   ui.styleOpen.hidden = !state.user;
   if (state.user) loadAvatars([state.user.id]);
@@ -2592,14 +2588,6 @@ function setupEvents() {
   $('#sidebar-account-settings')?.addEventListener('click', () => { navigatePath(routeBase() + 'settings'); ui.nicknameButton.click(); });
   $('#nickname-close')?.addEventListener('click', () => ui.nicknameDialog.close());
   ui.accountOpen.addEventListener('click', () => { navigatePath(routeBase() + 'log-in'); ui.nicknameDialog.close(); showAccountDialog(); });
-  ui.accountRecoveryCodeOpen.addEventListener('click', () => {
-    if (!state.user) return showToast('로그인한 계정에서만 복구 코드를 발급할 수 있어요.');
-    ui.accountRecoveryCodeValue.value = '';
-    ui.accountRecoveryCodeValue.hidden = true;
-    ui.accountRecoveryCodeCopy.hidden = true;
-    ui.accountRecoveryCodeDialog.showModal();
-  });
-  ui.accountRecoveryCodeClose.addEventListener('click', () => ui.accountRecoveryCodeDialog.close());
   ui.accountPasswordChangeOpen.addEventListener('click', () => {
     if (!state.user) return showToast('로그인한 계정에서만 비밀번호를 변경할 수 있어요.');
     ui.accountNewPassword.value = '';
@@ -2632,39 +2620,6 @@ function setupEvents() {
     }
   });
 
-  ui.accountRecoveryCodeIssue.addEventListener('click', async () => {
-    if (!state.user) return showToast('로그인 상태를 확인해 주세요.');
-    if (!window.confirm('새 복구 코드를 발급하면 이전 코드는 즉시 사용할 수 없게 됩니다. 계속할까요?')) return;
-    ui.accountRecoveryCodeIssue.disabled = true;
-    try {
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      const accessToken = sessionData.session?.access_token;
-      if (sessionError || !accessToken) throw new Error('로그인 세션을 확인하지 못했어요.');
-      const bytes = crypto.getRandomValues(new Uint8Array(32));
-      const recoveryCode = [...bytes].map((byte) => byte.toString(16).padStart(2, '0')).join('');
-      await callRecoveryRequest({ action: 'issue_recovery', recoveryCode }, accessToken);
-      ui.accountRecoveryCodeValue.value = recoveryCode;
-      ui.accountRecoveryCodeValue.hidden = false;
-      ui.accountRecoveryCodeCopy.hidden = false;
-      ui.accountRecoveryCodeIssue.textContent = '새 복구 코드 발급';
-      showToast('복구 코드를 발급했어요. 지금 안전한 곳에 저장하세요.');
-    } catch (error) {
-      showToast(errorText(error, '복구 코드를 발급하지 못했어요.'));
-    } finally {
-      ui.accountRecoveryCodeIssue.disabled = false;
-    }
-  });
-  ui.accountRecoveryCodeCopy.addEventListener('click', async () => {
-    if (!ui.accountRecoveryCodeValue.value) return;
-    try {
-      await navigator.clipboard.writeText(ui.accountRecoveryCodeValue.value);
-      showToast('복구 코드를 복사했어요.');
-    } catch {
-      ui.accountRecoveryCodeValue.focus();
-      ui.accountRecoveryCodeValue.select();
-      showToast('코드를 선택했어요. Ctrl+C로 복사해 주세요.');
-    }
-  });
   ui.accountRecoveryOpen.addEventListener('click', () => {
     ui.accountRecoveryNickname.value = ui.accountNickname.value.trim();
     ui.accountRecoveryCode.value = '';
