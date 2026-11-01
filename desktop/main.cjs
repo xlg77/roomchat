@@ -35,6 +35,7 @@ app.setName("RoomChat");
 app.setAppUserModelId("com.xlg77.roomchat");
 
 let mainWindow = null;
+let toggleButtonWindow = null;
 let overlayMode = false;
 let normalBounds = { width: 1440, height: 900, x: undefined, y: undefined };
 
@@ -47,11 +48,82 @@ function isTrustedAppUrl(value) {
   }
 }
 
-function injectOverlayToggleButton() {
+function createOverlayToggleButtonWindow() {
   if (!mainWindow || mainWindow.isDestroyed()) return;
+  if (toggleButtonWindow && !toggleButtonWindow.isDestroyed()) {
+    updateOverlayToggleButton();
+    positionOverlayToggleButton();
+    toggleButtonWindow.showInactive();
+    return;
+  }
+
+  toggleButtonWindow = new BrowserWindow({
+    width: 164,
+    height: 44,
+    parent: mainWindow,
+    frame: false,
+    transparent: true,
+    backgroundColor: "#00000000",
+    resizable: false,
+    movable: false,
+    minimizable: false,
+    maximizable: false,
+    fullscreenable: false,
+    skipTaskbar: true,
+    focusable: true,
+    show: false,
+    hasShadow: false,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: true
+    }
+  });
+
+  const html = `<!doctype html><html><head><meta charset="utf-8"><style>
+    *{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent}
+    button{width:100%;height:100%;border:0;border-radius:10px;background:#2676c9;color:#fff;
+      font:700 13px "Segoe UI",Arial,sans-serif;box-shadow:0 2px 10px #0004;cursor:pointer}
+    button:hover{background:#1d65ad}button:active{transform:scale(.98)}
+  </style></head><body><button id="toggle">오버레이 켜기</button>
+  <script>document.getElementById('toggle').addEventListener('click',()=>window.open('roomchat://toggle-overlay'));</script>
+  </body></html>`;
+  toggleButtonWindow.loadURL("data:text/html;charset=utf-8," + encodeURIComponent(html));
+  toggleButtonWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (url === "roomchat://toggle-overlay") {
+      setOverlayMode(!overlayMode);
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.show();
+        mainWindow.focus();
+      }
+    }
+    return { action: "deny" };
+  });
+  toggleButtonWindow.once("ready-to-show", () => {
+    positionOverlayToggleButton();
+    toggleButtonWindow.showInactive();
+  });
+  toggleButtonWindow.on("closed", () => { toggleButtonWindow = null; });
+  positionOverlayToggleButton();
+}
+
+function updateOverlayToggleButton() {
+  if (!toggleButtonWindow || toggleButtonWindow.isDestroyed()) return;
   const label = overlayMode ? "오버레이 끄기" : "오버레이 켜기";
-  const script = '(function(){let b=document.getElementById("roomchat-overlay-toggle");if(!b){b=document.createElement("button");b.id="roomchat-overlay-toggle";b.type="button";b.addEventListener("click",()=>window.open("roomchat://toggle-overlay"));document.body.appendChild(b);}b.textContent=' + JSON.stringify(label) + ';b.title="RoomChat 오버레이 모드 전환";b.style.cssText="position:fixed;top:10px;right:12px;z-index:2147483647;padding:8px 13px;border:0;border-radius:9px;background:#2676c9;color:#fff;font:600 12px Arial,sans-serif;box-shadow:0 2px 10px #0003;cursor:pointer;-webkit-app-region:no-drag";})();';
-  mainWindow.webContents.executeJavaScript(script).catch(() => {});
+  toggleButtonWindow.webContents.executeJavaScript(
+    "document.getElementById('toggle').textContent=" + JSON.stringify(label)
+  ).catch(() => {});
+}
+
+function positionOverlayToggleButton() {
+  if (!mainWindow || mainWindow.isDestroyed() || !toggleButtonWindow || toggleButtonWindow.isDestroyed()) return;
+  const bounds = mainWindow.getBounds();
+  toggleButtonWindow.setBounds({
+    x: Math.max(0, bounds.width - 172),
+    y: 8,
+    width: 164,
+    height: 44
+  });
 }
 function applyOverlayStyles() {
   if (!mainWindow || mainWindow.isDestroyed()) return;
@@ -98,7 +170,7 @@ function setOverlayMode(enabled) {
     mainWindow.setTitle("RoomChat · 채팅 오버레이");
     mainWindow.setMenuBarVisibility(false);
     applyOverlayStyles();
-    injectOverlayToggleButton();
+    updateOverlayToggleButton();
   } else {
     overlayMode = false;
     mainWindow.setAlwaysOnTop(false);
@@ -114,6 +186,8 @@ function setOverlayMode(enabled) {
     mainWindow.setMenuBarVisibility(false);
     mainWindow.webContents.executeJavaScript("document.getElementById('roomchat-windows-overlay-style')?.remove();document.getElementById('roomchat-overlay-toolbar')?.remove();document.getElementById('roomchat-overlay-restore')?.remove();document.querySelector('.chat-panel')?.classList.remove('roomchat-overlay-folded')").catch(() => {});
   }
+  updateOverlayToggleButton();
+  positionOverlayToggleButton();
   buildAppMenu();
 }
 
@@ -156,7 +230,7 @@ function createWindow() {
   mainWindow.once("ready-to-show", () => mainWindow.show());
   mainWindow.webContents.on("did-finish-load", () => {
     if (overlayMode) applyOverlayStyles();
-    injectOverlayToggleButton();
+    createOverlayToggleButtonWindow();
   });
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
@@ -176,7 +250,15 @@ function createWindow() {
     }
   });
 
-  mainWindow.on("closed", () => { mainWindow = null; });
+  mainWindow.on("move", positionOverlayToggleButton);
+  mainWindow.on("resize", positionOverlayToggleButton);
+  mainWindow.on("show", () => { if (toggleButtonWindow && !toggleButtonWindow.isDestroyed()) toggleButtonWindow.showInactive(); });
+  mainWindow.on("hide", () => { if (toggleButtonWindow && !toggleButtonWindow.isDestroyed()) toggleButtonWindow.hide(); });
+  mainWindow.on("closed", () => {
+    if (toggleButtonWindow && !toggleButtonWindow.isDestroyed()) toggleButtonWindow.close();
+    toggleButtonWindow = null;
+    mainWindow = null;
+  });
   mainWindow.loadURL(APP_URL);
   buildAppMenu();
 }
@@ -193,7 +275,7 @@ app.whenReady().then(() => {
   });
 });
 
-app.on("will-quit", () => globalShortcut.unregisterAll());
+app.on("will-quit", () => {});
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") app.quit();
 });
