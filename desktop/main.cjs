@@ -111,8 +111,26 @@ html,body{width:100%!important;height:100%!important;margin:0!important;padding:
   -webkit-text-fill-color:#fff!important;
   text-shadow:0 1px 3px rgba(0,0,0,.95)!important;
 }
-#message-list .message-row .message-meta .styled-name::before{content:"["!important}
-#message-list .message-row .message-meta .styled-name::after{content:"]:"!important;margin-right:3px!important}
+/* Put brackets on the metadata container, not the styled nickname.
+   This avoids collisions with nickname-specific pseudo-elements/gradient styles. */
+#message-list .message-row .message-meta::before{
+  content:"["!important;
+  display:inline!important;
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+}
+#message-list .message-row .message-meta .styled-name::before,
+#message-list .message-row .message-meta .styled-name::after{
+  content:none!important;
+  display:none!important;
+}
+#message-list .message-row .message-meta::after{
+  content:"]:"!important;
+  display:inline!important;
+  margin-right:4px!important;
+  color:#fff!important;
+  -webkit-text-fill-color:#fff!important;
+}
 #message-list .message-row .message-content,
 #message-list .message-row .message-content *,
 #message-list .message-row .message-content a,
