@@ -132,7 +132,7 @@
   head.addEventListener('pointermove', (event) => {
     if (!drag || drag.id !== event.pointerId) return;
     const left = clamp(event.clientX - drag.x, 0, innerWidth - panel.offsetWidth);
-    const top = clamp(event.clientY - drag.y, 0, innerHeight - 90);
+    const top = clamp(event.clientY - drag.y, 0, innerHeight - panel.offsetHeight);
     panel.style.left = left + 'px';
     panel.style.top = top + 'px';
     panel.style.right = 'auto';
