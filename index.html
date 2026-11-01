@@ -10,7 +10,7 @@
   <link rel="icon" href="/roomchat/icon.svg" type="image/svg+xml" />
   <link rel="manifest" href="/roomchat/manifest.webmanifest" />
   <link rel="stylesheet" href="/roomchat/styles.css?v=20261031-video-attachments-v1" />
-  <style>.mobile-overlay-download{display:none;text-decoration:none}@media(max-width:700px){.mobile-overlay-download{display:inline-flex;align-items:center;justify-content:center}}</style>
+  <style>.mobile-overlay-download{display:none;text-decoration:none}.desktop-app-download{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;white-space:nowrap}@media(max-width:700px){.mobile-overlay-download{display:inline-flex;align-items:center;justify-content:center}.desktop-app-download{display:none}}</style>
   <title>RoomChat — 실시간 채팅 커뮤니티</title>
 </head>
 <body>
@@ -97,6 +97,7 @@
             <svg class="friends-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M20 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span class="friends-label">친구</span><span id="friends-badge" class="friends-badge" hidden>0</span>
           </button>
           <a class="header-tool mobile-overlay-download" href="https://github.com/xlg77/roomchat/releases/download/roomchat-android-overlay-v1.0.1/app-debug.apk" aria-label="Android 오버레이 앱 설치 파일 다운로드">오버레이 설치</a>
+          <a class="header-tool desktop-app-download" href="https://github.com/xlg77/roomchat/releases/download/roomchat-desktop-v1.0.0/RoomChat-Setup-1.0.0.exe" aria-label="Windows용 RoomChat 설치 파일 다운로드">Windows 앱</a>
           <button id="notification-button" class="header-tool notification-button" type="button" aria-pressed="false" title="알림 켜기">
             <span class="bell-icon" aria-hidden="true">♧</span><span id="notification-label">알림</span>
           </button>
