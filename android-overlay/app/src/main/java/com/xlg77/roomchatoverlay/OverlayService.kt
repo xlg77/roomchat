@@ -5,6 +5,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
+import android.content.pm.ServiceInfo
 import android.graphics.Color
 import android.graphics.PixelFormat
 import android.os.Build
@@ -37,7 +38,11 @@ class OverlayService : Service() {
             return
         }
         createNotificationChannel()
-        startForeground(1, buildNotification())
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            startForeground(1, buildNotification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
+        } else {
+            startForeground(1, buildNotification())
+        }
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         showBubble()
     }
@@ -141,7 +146,7 @@ class OverlayService : Service() {
         val builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
             Notification.Builder(this, channelId) else Notification.Builder(this)
         return builder.setContentTitle("RoomChat 오버레이 실행 중")
-            .setContentText("알림에서 서비스를 종료할 수 있습니다.")
+            .setContentText("다른 앱 위에서 RoomChat 채팅을 표시하고 있습니다.")
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setOngoing(true)
             .build()
