@@ -35,8 +35,10 @@ jobs:
       - name: Read desktop app version
         id: get_version
         working-directory: desktop
-        shell: bash
-        run: echo "version=$(node -p \"require('./package.json').version\")" >> "$GITHUB_OUTPUT"
+        shell: pwsh
+        run: |
+          $version = node -p "require('./package.json').version"
+          "version=$version" >> $env:GITHUB_OUTPUT
 
       - name: Publish Windows installer
         uses: softprops/action-gh-release@v2
