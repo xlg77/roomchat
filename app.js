@@ -1702,7 +1702,7 @@ function setAccountMode(mode) {
     : '진짜 닉네임과 비밀번호로 로그인하세요.';
   ui.accountSubmit.innerHTML = `${mode === 'register' ? '계정 만들기' : '로그인'} <span aria-hidden="true">↗</span>`;
   ui.accountPassword.autocomplete = mode === 'register' ? 'new-password' : 'current-password';
-  ui.accountRecoveryOpen.hidden = mode !== 'login' || Boolean(state.pendingAdminInvite && !state.user);
+  ui.accountRecoveryOpen.hidden = true; // 복구 코드 로그인 진입점 비활성화
   updateAdminCodeVisibility();
 }
 function updateAdminCodeVisibility() {
