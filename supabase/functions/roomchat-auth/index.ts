@@ -90,37 +90,6 @@ Deno.serve(async (request: Request) => {
     const action = input?.action;
     const password = input?.password;
 
-    if (action === "issue_recovery") {
-      const accessToken = request.headers.get("authorization")?.replace(/^Bearer\s+/iu, "") || "";
-      const { data: authData, error: authError } = accessToken
-        ? await admin.auth.getUser(accessToken)
-        : { data: { user: null }, error: new Error("Missing access token") };
-      if (authError || !authData.user) {
-        return jsonResponse({ error: "로그인한 계정에서만 복구 코드를 발급할 수 있습니다." }, 401, origin);
-      }
-      const recoveryCode = typeof input?.recoveryCode === "string" ? input.recoveryCode.trim().toLowerCase() : "";
-      if (!/^[0-9a-f]{64}$/u.test(recoveryCode)) {
-        return jsonResponse({ error: "복구 코드 형식이 올바르지 않습니다." }, 400, origin);
-      }
-      if (!await allowRequest(request, "recovery")) {
-        return jsonResponse({ error: "복구 요청이 너무 많습니다. 잠시 후 다시 시도해 주세요." }, 429, origin);
-      }
-      const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", encoder.encode(recoveryCode)));
-      const codeHash = [...digest].map((byte) => byte.toString(16).padStart(2, "0")).join("");
-      const now = new Date();
-      const { error: storeError } = await admin.schema("roomchat_private").from("account_recovery_codes").upsert({
-        user_id: authData.user.id,
-        code_sha256: codeHash,
-        expires_at: new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000).toISOString(),
-        used_at: null,
-        created_at: now.toISOString(),
-      }, { onConflict: "user_id" });
-      if (storeError) {
-        return jsonResponse({ error: "복구 코드를 저장하지 못했습니다. 다시 시도해 주세요." }, 500, origin);
-      }
-      return jsonResponse({ ok: true }, 200, origin);
-    }
-
     if (action === "change_password") {
       if (!passwordIsValid(password)) {
         return jsonResponse({ error: "새 비밀번호는 8~72바이트로 입력해 주세요." }, 400, origin);
