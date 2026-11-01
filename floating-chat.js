@@ -1,5 +1,6 @@
 (() => {
   if (window.__roomchatFloatingOverlayLoaded) return;
+  if (!window.matchMedia('(max-width: 700px), (pointer: coarse)').matches) return;
   window.__roomchatFloatingOverlayLoaded = true;
 
   const css = document.createElement('style');
@@ -123,7 +124,7 @@
   const head = panel.querySelector('#rc-float-head');
   let drag = null;
   head.addEventListener('pointerdown', (event) => {
-    if (event.target.closest('button') || matchMedia('(max-width: 600px)').matches) return;
+    if (event.target.closest('button')) return;
     const rect = panel.getBoundingClientRect();
     drag = { id: event.pointerId, x: event.clientX - rect.left, y: event.clientY - rect.top };
     head.setPointerCapture(event.pointerId);
