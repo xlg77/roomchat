@@ -1,5 +1,6 @@
 package com.xlg77.roomchatoverlay
 
+import android.app.AlertDialog
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -18,6 +19,7 @@ import android.view.WindowManager
 import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.webkit.ValueCallback
 import android.widget.FrameLayout
 import android.widget.TextView
 import kotlin.math.max
@@ -87,7 +89,7 @@ class OverlayService : Service() {
             settings.loadsImagesAutomatically = true
             webViewClient = WebViewClient()
             webChromeClient = WebChromeClient()
-            loadUrl("https://xlg77.github.io/roomchat/")
+            loadUrl("https://xlg77.github.io/roomchat/?overlay=1")
         }
         webView = page
         container.addView(page, FrameLayout.LayoutParams(-1, -1).apply { topMargin = dp(42) })
@@ -107,6 +109,16 @@ class OverlayService : Service() {
             })
         }
         container.addView(dragBar, FrameLayout.LayoutParams(-1, dp(42), Gravity.TOP))
+        val chooseRoom = TextView(this).apply {
+            text = "방 선택"
+            textSize = 12f
+            gravity = Gravity.CENTER
+            setPadding(dp(8), 0, dp(8), 0)
+            setTextColor(Color.WHITE)
+            setBackgroundColor(Color.rgb(24, 88, 190))
+            setOnClickListener { showRoomPicker(page) }
+        }
+        container.addView(chooseRoom, FrameLayout.LayoutParams(dp(76), dp(42), Gravity.TOP or Gravity.END).apply { rightMargin = dp(42) })
         val close = TextView(this).apply {
             text = "×"
             textSize = 25f
@@ -126,6 +138,43 @@ class OverlayService : Service() {
         panel = container
         panelParams = params
         windowManager.addView(container, params)
+    }
+
+    private fun showRoomPicker(page: WebView) {
+        page.evaluateJavascript("window.RoomChatOverlay ? window.RoomChatOverlay.getRooms() : []") { raw ->
+            val json = raw ?: "[]"
+            val names = mutableListOf<String>()
+            val ids = mutableListOf<String>()
+            try {
+                val array = org.json.JSONArray(json)
+                for (i in 0 until array.length()) {
+                    val item = array.getJSONObject(i)
+                    ids.add(item.optString("id"))
+                    names.add(item.optString("name", "이름 없는 방"))
+                }
+            } catch (_: Exception) {}
+            if (names.isEmpty()) {
+                android.widget.Toast.makeText(this, "채팅방 목록을 불러오는 중이에요. 잠시 후 다시 눌러 주세요.", android.widget.Toast.LENGTH_SHORT).show()
+                return@evaluateJavascript
+            }
+            AlertDialog.Builder(this)
+                .setTitle("연결할 채팅방")
+                .setItems(names.toTypedArray()) { _, which ->
+                    val selectedId = org.json.JSONObject.quote(ids[which])
+                    page.evaluateJavascript(
+                        "window.RoomChatOverlay && window.RoomChatOverlay.selectRoom($selectedId)",
+                        ValueCallback { result ->
+                            if (result == "true") {
+                                android.widget.Toast.makeText(this, "${names[which]} 방에 연결했어요.", android.widget.Toast.LENGTH_SHORT).show()
+                            } else {
+                                android.widget.Toast.makeText(this, "채팅방을 선택하지 못했어요. 새로고침 후 다시 시도해 주세요.", android.widget.Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    )
+                }
+                .setNegativeButton("취소", null)
+                .show()
+        }
     }
 
     private fun closePanel() {
