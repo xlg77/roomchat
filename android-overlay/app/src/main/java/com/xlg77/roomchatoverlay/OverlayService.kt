@@ -161,17 +161,28 @@ class OverlayService : Service() {
     private class DragTouchListener(private val move: (Float, Float) -> Unit) : View.OnTouchListener {
         private var lastX = 0f
         private var lastY = 0f
+        private var moved = false
         override fun onTouch(view: View, event: MotionEvent): Boolean {
             when (event.action) {
-                MotionEvent.ACTION_DOWN -> { lastX = event.rawX; lastY = event.rawY; return true }
+                MotionEvent.ACTION_DOWN -> {
+                    lastX = event.rawX
+                    lastY = event.rawY
+                    moved = false
+                    return true
+                }
                 MotionEvent.ACTION_MOVE -> {
                     val dx = event.rawX - lastX
                     val dy = event.rawY - lastY
-                    lastX = event.rawX; lastY = event.rawY
+                    if (kotlin.math.abs(dx) > 2f || kotlin.math.abs(dy) > 2f) moved = true
+                    lastX = event.rawX
+                    lastY = event.rawY
                     move(dx, dy)
                     return true
                 }
-                MotionEvent.ACTION_UP -> { view.performClick(); return true }
+                MotionEvent.ACTION_UP -> {
+                    if (!moved) view.performClick()
+                    return true
+                }
             }
             return false
         }
