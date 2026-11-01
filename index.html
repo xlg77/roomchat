@@ -96,7 +96,7 @@
           <button id="friends-button" class="header-tool friends-button" type="button" aria-haspopup="dialog" title="친구와 DM" hidden>
             <svg class="friends-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M20 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span class="friends-label">친구</span><span id="friends-badge" class="friends-badge" hidden>0</span>
           </button>
-          <a class="header-tool mobile-overlay-download" href="https://github.com/xlg77/roomchat/releases/download/roomchat-android-overlay-v1.0.1/app-debug.apk" aria-label="Android 오버레이 앱 설치 파일 다운로드">오버레이 설치</a>
+          <a class="header-tool mobile-overlay-download" href="https://github.com/xlg77/roomchat/releases/download/roomchat-android-overlay-v1.0.2/app-debug.apk" aria-label="Android 오버레이 앱 설치 파일 다운로드">Android 오버레이 APK</a>
           <a class="header-tool desktop-app-download" href="https://github.com/xlg77/roomchat/releases/download/roomchat-desktop-v1.0.0/RoomChat-Setup-1.0.0.exe" aria-label="Windows용 RoomChat 설치 파일 다운로드">Windows 앱</a>
           <button id="notification-button" class="header-tool notification-button" type="button" aria-pressed="false" title="알림 켜기">
             <span class="bell-icon" aria-hidden="true">♧</span><span id="notification-label">알림</span>
@@ -203,6 +203,7 @@
       <button id="style-open-button" class="secondary-button account-open" type="button" hidden>프로필 꾸미기 (글꼴 · 색 · 태그)</button>
       <button id="account-open-button" class="secondary-button account-open" type="button">가입 또는 로그인</button>
       <button id="account-recovery-code-open" class="secondary-button account-open" type="button" hidden>비밀번호 복구 코드 발급</button>
+      <button id="account-password-change-open" class="secondary-button account-open" type="button" hidden>비밀번호 변경</button>
       <button id="sign-out-button" class="text-button" type="button" hidden>계정 로그아웃</button>
       <span class="safety-caption">[인증됨]은 이름과 분리된 배지예요. 관리자는 이름을 바꿔도 배지가 유지돼요.</span>
     </form>
@@ -231,6 +232,22 @@
       <button id="account-recovery-open" class="text-button" type="button" hidden>복구 코드로 비밀번호 찾기</button>
       <button id="account-cancel-button" class="secondary-button account-open" type="button">돌아가기</button>
       <button id="admin-recovery-open" class="text-button" type="button" hidden>관리자 비밀번호 재설정</button>
+    </form>
+  </dialog>
+
+
+  <dialog id="account-password-change-dialog" class="modal">
+    <form id="account-password-change-form" class="modal-card">
+      <span class="modal-icon">🔒</span>
+      <span class="eyebrow">ACCOUNT SECURITY</span>
+      <h2>비밀번호 변경</h2>
+      <p>로그인된 계정의 새 비밀번호를 설정합니다. 복구 코드나 이메일은 필요하지 않아요.</p>
+      <label class="field-label" for="account-new-password">새 비밀번호</label>
+      <input id="account-new-password" class="text-field" type="password" minlength="8" maxlength="72" autocomplete="new-password" placeholder="8자 이상" required />
+      <label class="field-label" for="account-new-password-confirm">새 비밀번호 확인</label>
+      <input id="account-new-password-confirm" class="text-field" type="password" minlength="8" maxlength="72" autocomplete="new-password" placeholder="새 비밀번호 다시 입력" required />
+      <button id="account-password-change-submit" class="primary-button" type="submit">비밀번호 저장</button>
+      <button id="account-password-change-cancel" class="secondary-button" type="button">취소</button>
     </form>
   </dialog>
 
