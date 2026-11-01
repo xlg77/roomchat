@@ -84,12 +84,12 @@ function setOverlayMode(enabled) {
 function buildAppMenu() {
   const template = [
     { label: "RoomChat", submenu: [
-      { label: "채팅 오버레이 모드", type: "checkbox", checked: overlayMode, accelerator: "Ctrl+Shift+O", click: () => setOverlayMode(!overlayMode) },
+      { label: "채팅 오버레이 모드", type: "checkbox", checked: overlayMode, click: () => setOverlayMode(!overlayMode) },
       { type: "separator" },
       { role: "quit", label: "종료" }
     ]},
     { label: "보기", submenu: [
-      { label: "채팅 오버레이 모드 전환", accelerator: "Ctrl+Shift+O", click: () => setOverlayMode(!overlayMode) },
+      { label: "채팅 오버레이 모드 전환", click: () => setOverlayMode(!overlayMode) },
       { type: "separator" },
       { role: "reload", label: "새로고침" },
       { role: "toggleDevTools", label: "개발자 도구" }
