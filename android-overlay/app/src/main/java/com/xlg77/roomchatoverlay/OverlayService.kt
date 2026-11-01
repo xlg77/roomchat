@@ -56,7 +56,7 @@ class OverlayService : Service() {
             textSize = 21f
             setTextColor(Color.WHITE)
             gravity = Gravity.CENTER
-            setBackgroundColor(Color.rgb(35, 115, 235))
+            setBackgroundColor(Color.rgb(95, 95, 95))
             elevation = 12f
             setOnClickListener { togglePanel() }
             setOnTouchListener(DragTouchListener { dx, dy ->
@@ -82,24 +82,29 @@ class OverlayService : Service() {
             closePanel()
             return
         }
-        val container = FrameLayout(this).apply { setBackgroundColor(Color.WHITE); elevation = 18f }
+        val container = FrameLayout(this).apply { setBackgroundColor(Color.TRANSPARENT); elevation = 18f }
         val page = WebView(this).apply {
             settings.javaScriptEnabled = true
             settings.domStorageEnabled = true
             settings.loadsImagesAutomatically = true
-            webViewClient = WebViewClient()
+            webViewClient = object : WebViewClient() {
+                override fun onPageFinished(view: WebView, url: String) {
+                    super.onPageFinished(view, url)
+                    view.evaluateJavascript(OVERLAY_CHAT_CSS, null)
+                }
+            }
             webChromeClient = WebChromeClient()
             loadUrl("https://xlg77.github.io/roomchat/?overlay=1")
         }
         webView = page
-        container.addView(page, FrameLayout.LayoutParams(-1, -1).apply { topMargin = dp(42) })
+        container.addView(page, FrameLayout.LayoutParams(-1, -1).apply { topMargin = dp(30) })
         val dragBar = TextView(this).apply {
-            text = "RoomChat  ·  드래그해서 이동"
-            textSize = 14f
+            text = "☰  RoomChat 채팅"
+            textSize = 12f
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(12), 0, dp(48), 0)
+            setPadding(dp(10), 0, dp(118), 0)
             setTextColor(Color.WHITE)
-            setBackgroundColor(Color.rgb(35, 115, 235))
+            setBackgroundColor(Color.rgb(75, 75, 75))
             setOnTouchListener(DragTouchListener { dx, dy ->
                 panelParams?.let { p ->
                     p.x += dx.toInt()
@@ -108,17 +113,17 @@ class OverlayService : Service() {
                 }
             })
         }
-        container.addView(dragBar, FrameLayout.LayoutParams(-1, dp(42), Gravity.TOP))
+        container.addView(dragBar, FrameLayout.LayoutParams(-1, dp(30), Gravity.TOP))
         val chooseRoom = TextView(this).apply {
             text = "방 선택"
             textSize = 12f
             gravity = Gravity.CENTER
             setPadding(dp(8), 0, dp(8), 0)
             setTextColor(Color.WHITE)
-            setBackgroundColor(Color.rgb(24, 88, 190))
+            setBackgroundColor(Color.rgb(75, 75, 75))
             setOnClickListener { showRoomPicker(page) }
         }
-        container.addView(chooseRoom, FrameLayout.LayoutParams(dp(76), dp(42), Gravity.TOP or Gravity.END).apply { rightMargin = dp(42) })
+        container.addView(chooseRoom, FrameLayout.LayoutParams(dp(76), dp(30), Gravity.TOP or Gravity.END).apply { rightMargin = dp(42) })
         val close = TextView(this).apply {
             text = "×"
             textSize = 25f
@@ -127,10 +132,10 @@ class OverlayService : Service() {
             setBackgroundColor(Color.rgb(35, 115, 235))
             setOnClickListener { closePanel() }
         }
-        container.addView(close, FrameLayout.LayoutParams(dp(42), dp(42), Gravity.TOP or Gravity.END))
+        container.addView(close, FrameLayout.LayoutParams(dp(42), dp(30), Gravity.TOP or Gravity.END))
         val params = WindowManager.LayoutParams(
             max(1, resources.displayMetrics.widthPixels - dp(28)),
-            dp(420),
+            dp(300),
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
             WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             PixelFormat.TRANSLUCENT
@@ -183,6 +188,34 @@ class OverlayService : Service() {
         webView?.destroy()
         webView = null
     }
+
+    private val OVERLAY_CHAT_CSS = """
+        (function(){
+          if(document.getElementById('rc-native-overlay-style')) return;
+          const style=document.createElement('style');
+          style.id='rc-native-overlay-style';
+          style.textContent=`
+            html,body{width:100%!important;height:100%!important;min-height:0!important;margin:0!important;padding:0!important;overflow:hidden!important;background:transparent!important}
+            #app-loading{display:none!important}
+            .app-shell{display:block!important;width:100%!important;height:calc(100vh - 30px)!important;min-height:0!important;margin:0!important;padding:0!important;overflow:hidden!important}
+            .app-shell>:not(.chat-panel){display:none!important}
+            .chat-panel{display:flex!important;position:relative!important;width:100%!important;height:100%!important;min-width:0!important;min-height:0!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;background:rgba(112,112,112,.84)!important;overflow:hidden!important}
+            .chat-panel>:not(#message-list):not(.composer-wrap){display:none!important}
+            #message-list{display:block!important;flex:1 1 auto!important;min-height:0!important;height:auto!important;max-height:none!important;overflow-y:auto!important;overflow-x:hidden!important;padding:3px 7px!important;margin:0!important;background:transparent!important;border:0!important;border-radius:0!important}
+            .message-item{max-width:100%!important;margin:0 0 2px!important;padding:0!important;background:transparent!important;border:0!important;box-shadow:none!important}
+            .message-content{overflow-wrap:anywhere!important;word-break:normal!important}
+            .composer-wrap{display:block!important;flex:0 0 auto!important;margin:0!important;padding:4px!important;background:rgba(220,220,220,.94)!important;border-top:1px solid rgba(255,255,255,.6)!important}
+            .composer{display:flex!important;gap:0!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important}
+            .composer>:not(#message-input){display:none!important}
+            #message-input{display:block!important;flex:1 1 auto!important;width:100%!important;min-width:0!important;min-height:24px!important;max-height:60px!important;margin:0!important;padding:3px 5px!important;border:0!important;border-radius:0!important;outline:none!important;resize:none!important;background:rgba(255,255,255,.45)!important;color:#222!important;font:600 13px Arial,sans-serif!important}
+            #message-input::placeholder{color:#555!important;opacity:1!important}
+            .composer-foot,.toast,.mention-popup{display:none!important}
+          `;
+          document.head.appendChild(style);
+          const input=document.querySelector('#message-input');
+          if(input) input.placeholder='Tap here to chat';
+        })();
+    """.trimIndent()
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
