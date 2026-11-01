@@ -56,7 +56,7 @@ class OverlayService : Service() {
             textSize = 21f
             setTextColor(Color.WHITE)
             gravity = Gravity.CENTER
-            setBackgroundColor(Color.rgb(95, 95, 95))
+            setBackgroundColor(Color.rgb(35, 115, 235))
             elevation = 12f
             setOnClickListener { togglePanel() }
             setOnTouchListener(DragTouchListener { dx, dy ->
