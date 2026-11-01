@@ -1,0 +1,44 @@
+name: Build RoomChat Windows app
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "desktop/**"
+      - ".github/workflows/windows-desktop.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: desktop/package.json
+
+      - name: Install dependencies
+        working-directory: desktop
+        run: npm install
+
+      - name: Build Windows installer
+        working-directory: desktop
+        run: npm run dist
+
+      - name: Publish Windows installer
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: roomchat-desktop-v1.0.0
+          name: RoomChat Windows 앱 v1.0.0
+          prerelease: false
+          make_latest: true
+          overwrite_files: true
+          files: desktop/dist/RoomChat-Setup-1.0.0.exe
+          fail_on_unmatched_files: true
