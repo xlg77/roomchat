@@ -20,7 +20,15 @@ const ui = {
   accountDialog: $('#account-dialog'), accountForm: $('#account-form'), accountNickname: $('#account-nickname'),
   accountPassword: $('#account-password'), adminCodeWrap: $('#admin-code-wrap'), adminCode: $('#admin-claim-code'),
   accountTitle: $('#account-title'), accountDescription: $('#account-description'), accountSubmit: $('#account-submit-button'),
-  accountCancel: $('#account-cancel-button'), roomDialog: $('#room-dialog'), roomForm: $('#room-form'), roomInput: $('#room-input'),
+  accountCancel: $('#account-cancel-button'), accountRecoveryOpen: $('#account-recovery-open'),
+  accountRecoveryDialog: $('#account-recovery-dialog'), accountRecoveryForm: $('#account-recovery-form'),
+  accountRecoveryNickname: $('#account-recovery-nickname'), accountRecoveryCode: $('#account-recovery-code'),
+  accountRecoveryPassword: $('#account-recovery-password'), accountRecoveryCancel: $('#account-recovery-cancel'),
+  accountRecoverySubmit: $('#account-recovery-submit'),
+  accountRecoveryCodeOpen: $('#account-recovery-code-open'), accountRecoveryCodeDialog: $('#account-recovery-code-dialog'),
+  accountRecoveryCodeIssue: $('#account-recovery-code-issue'), accountRecoveryCodeValue: $('#account-recovery-code-value'),
+  accountRecoveryCodeCopy: $('#account-recovery-code-copy'), accountRecoveryCodeClose: $('#account-recovery-code-close'),
+  roomDialog: $('#room-dialog'), roomForm: $('#room-form'), roomInput: $('#room-input'),
   roomDelete: $('#room-delete-button'), childRoomButton: $('#new-child-room-button'), roomUnlimitedChoice: $('#room-unlimited-choice'), membersDialog: $('#members-dialog'), memberList: $('#member-list'),
   membersNote: $('#members-note'), membersClose: $('#members-close-button'), notificationButton: $('#notification-button'),
   notificationLabel: $('#notification-label'), messageForm: $('#message-form'), messageInput: $('#message-input'),
@@ -1609,6 +1617,7 @@ function updateIdentityUI() {
   ui.signOut.hidden = !state.user;
   ui.adminPanelButton.hidden = !state.isAdmin;
   ui.avatarSection.hidden = !state.user;
+  ui.accountRecoveryCodeOpen.hidden = !state.user;
   ui.styleOpen.hidden = !state.user;
   if (state.user) loadAvatars([state.user.id]);
   applyAvatars();
@@ -1646,6 +1655,20 @@ async function applySession(session, nicknameHint = '', loginNicknameHint = '') 
   updateIdentityUI();
   social?.start();
 }
+async function callRecoveryRequest(payload, accessToken = SUPABASE_PUBLISHABLE_KEY) {
+  const response = await fetch(`${SUPABASE_URL.replace(/\/$/u, '')}/functions/v1/roomchat-auth`, {
+    method: 'POST',
+    headers: {
+      apikey: SUPABASE_PUBLISHABLE_KEY,
+      Authorization: `Bearer ${accessToken}`,
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(result.error || '복구 요청을 처리하지 못했어요.');
+  return result;
+}
 async function callAuth(action, nickname, password, adminClaimCode = '') {
   const response = await fetch(`${SUPABASE_URL.replace(/\/$/u, '')}/functions/v1/roomchat-auth`, {
     method: 'POST',
@@ -1679,6 +1702,7 @@ function setAccountMode(mode) {
     : '진짜 닉네임과 비밀번호로 로그인하세요.';
   ui.accountSubmit.innerHTML = `${mode === 'register' ? '계정 만들기' : '로그인'} <span aria-hidden="true">↗</span>`;
   ui.accountPassword.autocomplete = mode === 'register' ? 'new-password' : 'current-password';
+  ui.accountRecoveryOpen.hidden = mode !== 'login' || Boolean(state.pendingAdminInvite && !state.user);
   updateAdminCodeVisibility();
 }
 function updateAdminCodeVisibility() {
@@ -2564,6 +2588,59 @@ function setupEvents() {
   $('#sidebar-account-settings')?.addEventListener('click', () => { navigatePath(routeBase() + 'settings'); ui.nicknameButton.click(); });
   $('#nickname-close')?.addEventListener('click', () => ui.nicknameDialog.close());
   ui.accountOpen.addEventListener('click', () => { navigatePath(routeBase() + 'log-in'); ui.nicknameDialog.close(); showAccountDialog(); });
+  ui.accountRecoveryCodeOpen.addEventListener('click', () => {
+    if (!state.user) return showToast('로그인한 계정에서만 복구 코드를 발급할 수 있어요.');
+    ui.accountRecoveryCodeValue.value = '';
+    ui.accountRecoveryCodeValue.hidden = true;
+    ui.accountRecoveryCodeCopy.hidden = true;
+    ui.accountRecoveryCodeDialog.showModal();
+  });
+  ui.accountRecoveryCodeClose.addEventListener('click', () => ui.accountRecoveryCodeDialog.close());
+  ui.accountRecoveryCodeIssue.addEventListener('click', async () => {
+    if (!state.user) return showToast('로그인 상태를 확인해 주세요.');
+    if (!window.confirm('새 복구 코드를 발급하면 이전 코드는 즉시 사용할 수 없게 됩니다. 계속할까요?')) return;
+    ui.accountRecoveryCodeIssue.disabled = true;
+    try {
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      if (sessionError || !accessToken) throw new Error('로그인 세션을 확인하지 못했어요.');
+      const bytes = crypto.getRandomValues(new Uint8Array(32));
+      const recoveryCode = [...bytes].map((byte) => byte.toString(16).padStart(2, '0')).join('');
+      await callRecoveryRequest({ action: 'issue_recovery', recoveryCode }, accessToken);
+      ui.accountRecoveryCodeValue.value = recoveryCode;
+      ui.accountRecoveryCodeValue.hidden = false;
+      ui.accountRecoveryCodeCopy.hidden = false;
+      ui.accountRecoveryCodeIssue.textContent = '새 복구 코드 발급';
+      showToast('복구 코드를 발급했어요. 지금 안전한 곳에 저장하세요.');
+    } catch (error) {
+      showToast(errorText(error, '복구 코드를 발급하지 못했어요.'));
+    } finally {
+      ui.accountRecoveryCodeIssue.disabled = false;
+    }
+  });
+  ui.accountRecoveryCodeCopy.addEventListener('click', async () => {
+    if (!ui.accountRecoveryCodeValue.value) return;
+    try {
+      await navigator.clipboard.writeText(ui.accountRecoveryCodeValue.value);
+      showToast('복구 코드를 복사했어요.');
+    } catch {
+      ui.accountRecoveryCodeValue.focus();
+      ui.accountRecoveryCodeValue.select();
+      showToast('코드를 선택했어요. Ctrl+C로 복사해 주세요.');
+    }
+  });
+  ui.accountRecoveryOpen.addEventListener('click', () => {
+    ui.accountRecoveryNickname.value = ui.accountNickname.value.trim();
+    ui.accountRecoveryCode.value = '';
+    ui.accountRecoveryPassword.value = '';
+    ui.accountDialog.close();
+    ui.accountRecoveryDialog.showModal();
+  });
+  ui.accountRecoveryCancel.addEventListener('click', () => {
+    ui.accountRecoveryDialog.close();
+    ui.accountDialog.showModal();
+    setAccountMode('login');
+  });
   ui.styleOpen.addEventListener('click', () => { ui.nicknameDialog.close(); social?.openStyleDialog(); });
   ui.signOut.addEventListener('click', async () => {
     await supabase.auth.signOut();
@@ -2818,6 +2895,31 @@ function setupEvents() {
       if (state.room) { const current = state.room; state.room = null; await switchRoom(current); }
     } catch (error) { showToast(errorText(error, '계정을 확인하지 못했어요.')); }
     finally { ui.accountSubmit.disabled = false; }
+  });
+  ui.accountRecoveryForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const nickname = ui.accountRecoveryNickname.value.normalize('NFC').trim().replace(/\s+/gu, ' ');
+    const recoveryCode = ui.accountRecoveryCode.value.trim().toLowerCase();
+    const password = ui.accountRecoveryPassword.value;
+    if (!nickname || nickname.length > 20) return showToast('로그인용 진짜 닉네임을 확인해 주세요.');
+    if (!/^[0-9a-f]{64}$/u.test(recoveryCode)) return showToast('복구 코드는 발급받은 64자리 코드를 입력해 주세요.');
+    if (password.length < 8 || new TextEncoder().encode(password).length > 72) return showToast('새 비밀번호는 8~72바이트로 입력해 주세요.');
+    ui.accountRecoverySubmit.disabled = true;
+    try {
+      await callRecoveryRequest({ action: 'recover_account', nickname, recoveryCode, password });
+      ui.accountRecoveryDialog.close();
+      ui.accountRecoveryCode.value = '';
+      ui.accountRecoveryPassword.value = '';
+      ui.accountDialog.showModal();
+      setAccountMode('login');
+      ui.accountNickname.value = nickname;
+      ui.accountPassword.value = '';
+      showToast('비밀번호를 변경했어요. 새 비밀번호로 로그인해 주세요.');
+    } catch (error) {
+      showToast(errorText(error, '계정 또는 복구 코드를 확인해 주세요.'));
+    } finally {
+      ui.accountRecoverySubmit.disabled = false;
+    }
   });
   ui.accountCancel.addEventListener('click', () => { ui.accountDialog.close(); showNicknameDialog(); });
 }
