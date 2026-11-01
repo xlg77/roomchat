@@ -121,6 +121,27 @@ Deno.serve(async (request: Request) => {
       return jsonResponse({ ok: true }, 200, origin);
     }
 
+    if (action === "change_password") {
+      if (!passwordIsValid(password)) {
+        return jsonResponse({ error: "새 비밀번호는 8~72바이트로 입력해 주세요." }, 400, origin);
+      }
+      const accessToken = request.headers.get("authorization")?.replace(/^Bearer\\s+/iu, "") || "";
+      const { data: authData, error: authError } = accessToken
+        ? await admin.auth.getUser(accessToken)
+        : { data: { user: null }, error: new Error("Missing access token") };
+      if (authError || !authData.user) {
+        return jsonResponse({ error: "로그인한 계정에서만 비밀번호를 변경할 수 있습니다." }, 401, origin);
+      }
+      if (!await allowRequest(request, "recovery")) {
+        return jsonResponse({ error: "비밀번호 변경 요청이 너무 많습니다. 잠시 후 다시 시도해 주세요." }, 429, origin);
+      }
+      const { error: passwordError } = await admin.auth.admin.updateUserById(authData.user.id, { password });
+      if (passwordError) {
+        return jsonResponse({ error: "비밀번호를 변경하지 못했습니다. 다시 시도해 주세요." }, 400, origin);
+      }
+      return jsonResponse({ ok: true }, 200, origin);
+    }
+
     const nickname = normalizeNickname(input?.nickname);
     if (nickname.length < 1 || nickname.length > 20 || /[\u0000-\u001f\u007f]/u.test(nickname)) {
       return jsonResponse({ error: "닉네임은 1~20자로 입력해 주세요." }, 400, origin);
