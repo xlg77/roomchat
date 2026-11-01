@@ -202,7 +202,6 @@
       <button id="nickname-submit-button" class="primary-button" type="submit">게스트로 시작 <span aria-hidden="true">↗</span></button>
       <button id="style-open-button" class="secondary-button account-open" type="button" hidden>프로필 꾸미기 (글꼴 · 색 · 태그)</button>
       <button id="account-open-button" class="secondary-button account-open" type="button">가입 또는 로그인</button>
-      <button id="account-recovery-code-open" class="secondary-button account-open" type="button" hidden>비밀번호 복구 코드 발급</button>
       <button id="account-password-change-open" class="secondary-button account-open" type="button" hidden>비밀번호 변경</button>
       <button id="sign-out-button" class="text-button" type="button" hidden>계정 로그아웃</button>
       <span class="safety-caption">[인증됨]은 이름과 분리된 배지예요. 관리자는 이름을 바꿔도 배지가 유지돼요.</span>
@@ -249,20 +248,6 @@
       <button id="account-password-change-submit" class="primary-button" type="submit">비밀번호 저장</button>
       <button id="account-password-change-cancel" class="secondary-button" type="button">취소</button>
     </form>
-  </dialog>
-
-  <dialog id="account-recovery-code-dialog" class="modal">
-    <section class="modal-card" aria-label="비밀번호 복구 코드 발급">
-      <button id="account-recovery-code-close" class="icon-button" type="button" aria-label="닫기">×</button>
-      <span class="modal-icon">🔐</span>
-      <span class="eyebrow">ACCOUNT SECURITY</span>
-      <h2>비밀번호 복구 코드</h2>
-      <p>복구 코드를 발급하면 현재 코드는 교체됩니다. 코드는 발급 직후 한 번만 보여요. 비밀번호 관리자 등 안전한 곳에 저장하세요.</p>
-      <button id="account-recovery-code-issue" class="primary-button" type="button">복구 코드 발급</button>
-      <input id="account-recovery-code-value" class="text-field" type="text" readonly autocomplete="off" aria-label="새 복구 코드" hidden />
-      <button id="account-recovery-code-copy" class="secondary-button" type="button" hidden>복구 코드 복사</button>
-      <span class="safety-caption">코드는 1년 후 만료되며 한 번만 사용할 수 있어요. 코드를 잃어버리면 로그인 상태에서 새 코드를 발급해야 해요.</span>
-    </section>
   </dialog>
 
   <dialog id="account-recovery-dialog" class="modal">
