@@ -1,10 +1,11 @@
-const { app, BrowserWindow, shell, session, Menu, globalShortcut, dialog } = require("electron");
+const { app, BrowserWindow, shell, session, Menu } = require("electron");
 
 const APP_URL = "https://xlg77.github.io/roomchat/";
 const APP_ORIGIN = new URL(APP_URL).origin;
 const OVERLAY_CSS = `
   html,body{width:100%!important;height:100%!important;min-height:0!important;margin:0!important;padding:0!important;overflow:hidden!important;background:transparent!important}
   #app-loading{display:none!important}
+  #roomchat-overlay-toggle{position:fixed!important;top:10px!important;right:12px!important;z-index:2147483647!important;padding:8px 13px!important;border:0!important;border-radius:9px!important;background:#2676c9!important;color:#fff!important;font:600 12px Arial,sans-serif!important;box-shadow:0 2px 10px #0003!important;cursor:pointer!important;-webkit-app-region:no-drag!important}
   .app-shell{display:block!important;width:100%!important;height:100vh!important;min-height:0!important;margin:0!important;padding:0!important;overflow:hidden!important}
   .app-shell>:not(.chat-panel){display:none!important}
   .chat-panel{display:flex!important;flex-direction:column!important;position:relative!important;width:100%!important;height:100%!important;min-width:0!important;min-height:0!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;background:rgba(112,130,148,.94)!important;overflow:hidden!important}
@@ -46,6 +47,12 @@ function isTrustedAppUrl(value) {
   }
 }
 
+function injectOverlayToggleButton() {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  const label = overlayMode ? "오버레이 끄기" : "오버레이 켜기";
+  const script = '(function(){let b=document.getElementById("roomchat-overlay-toggle");if(!b){b=document.createElement("button");b.id="roomchat-overlay-toggle";b.type="button";b.addEventListener("click",()=>window.open("roomchat://toggle-overlay"));document.body.appendChild(b);}b.textContent=' + JSON.stringify(label) + ';b.title="RoomChat 오버레이 모드 전환";})();';
+  mainWindow.webContents.executeJavaScript(script).catch(() => {});
+}
 function applyOverlayStyles() {
   if (!mainWindow || mainWindow.isDestroyed()) return;
   mainWindow.webContents.executeJavaScript(`
@@ -91,6 +98,7 @@ function setOverlayMode(enabled) {
     mainWindow.setTitle("RoomChat · 채팅 오버레이");
     mainWindow.setMenuBarVisibility(false);
     applyOverlayStyles();
+    injectOverlayToggleButton();
   } else {
     overlayMode = false;
     mainWindow.setAlwaysOnTop(false);
@@ -148,9 +156,15 @@ function createWindow() {
   mainWindow.once("ready-to-show", () => mainWindow.show());
   mainWindow.webContents.on("did-finish-load", () => {
     if (overlayMode) applyOverlayStyles();
+    injectOverlayToggleButton();
   });
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (url === "roomchat://toggle-overlay") {
+      setOverlayMode(!overlayMode);
+      if (mainWindow && !mainWindow.isDestroyed()) { mainWindow.show(); mainWindow.focus(); }
+      return { action: "deny" };
+    }
     if (/^https:\/\//i.test(url) && !isTrustedAppUrl(url)) shell.openExternal(url);
     return { action: "deny" };
   });
@@ -174,41 +188,6 @@ app.whenReady().then(() => {
   });
 
   createWindow();
-  const toggleOverlay = () => {
-    if (!mainWindow || mainWindow.isDestroyed()) return;
-    setOverlayMode(!overlayMode);
-    if (mainWindow.isMinimized()) mainWindow.restore();
-    mainWindow.show();
-    mainWindow.focus();
-  };
-
-  // Windows에서는 명시적인 Control 조합으로 등록하고, 충돌 시 대체 키를 사용한다.
-  const primaryShortcut = process.platform === "darwin"
-    ? "Command+Shift+O"
-    : "Control+Shift+O";
-  const fallbackShortcut = process.platform === "darwin"
-    ? "Command+Option+O"
-    : "Control+Alt+O";
-
-  let shortcutRegistered = globalShortcut.register(primaryShortcut, toggleOverlay);
-  let registeredShortcut = shortcutRegistered ? primaryShortcut : null;
-
-  if (!shortcutRegistered) {
-    shortcutRegistered = globalShortcut.register(fallbackShortcut, toggleOverlay);
-    if (shortcutRegistered) registeredShortcut = fallbackShortcut;
-  }
-
-  if (!shortcutRegistered) {
-    dialog.showMessageBox({
-      type: "warning",
-      title: "RoomChat 단축키 등록 실패",
-      message: "오버레이 단축키를 등록하지 못했습니다.",
-      detail: "다른 프로그램이 단축키를 사용 중일 수 있습니다. RoomChat 메뉴의 '보기 → 채팅 오버레이 모드 전환'을 사용해 주세요."
-    });
-  } else {
-    app.commandLine.appendSwitch("roomchat-overlay-shortcut", registeredShortcut);
-  }
-
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
