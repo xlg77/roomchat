@@ -211,7 +211,8 @@ function createWindow() {
     minHeight: 640,
     show: false,
     autoHideMenuBar: true,
-    backgroundColor: "#e8f8ff",
+    backgroundColor: "#00000000",
+    transparent: true,
     title: "RoomChat",
     webPreferences: {
       nodeIntegration: false,
