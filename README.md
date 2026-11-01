@@ -2,7 +2,7 @@
 
 **채널을 만들고, 친구와 이야기하고, GIF·YouTube·효과음까지 함께 나누는 실시간 채팅 커뮤니티.**
 
-[🌐 RoomChat 열기](https://xlg77.github.io/roomchat/) · [전체 기능 안내](FEATURES.md) · [기능 목록 보관본](FEATURE_REGISTRY.md) · [기능 진행표](FEATURE_TRACKER.md)
+[🌐 RoomChat 열기](https://xlg77.github.io/roomchat/) · [Windows 앱 설치](https://github.com/xlg77/roomchat/releases/download/roomchat-desktop-v1.0.0/RoomChat-Setup-1.0.0.exe) · [전체 기능 안내](FEATURES.md) · [기능 목록 보관본](FEATURE_REGISTRY.md) · [기능 진행표](FEATURE_TRACKER.md)
 
 RoomChat은 웹 브라우저에서 바로 사용할 수 있는 실시간 공개 채팅 서비스입니다. 게스트로 먼저 둘러볼 수 있고, 계정을 만들면 친구·DM·프로필 꾸미기 같은 소셜 기능을 이용할 수 있습니다. PC와 모바일 화면에 맞춘 UI를 제공하며, 데이터와 실시간 통신은 Supabase를 사용합니다.
 
@@ -22,7 +22,7 @@ RoomChat은 웹 브라우저에서 바로 사용할 수 있는 실시간 공개 
 | 🤝 친구와 DM | 친구 요청, 온라인 상태, 텍스트·이미지·GIF DM, 이모지 선택, 답장, 읽음 표시, 전체 DM 기록 검색 |
 | 🏷️ 태그 | 이미지 태그 만들기, 다른 사람이 만든 태그 따라 하기, 프로필에 최대 3개 표시 |
 | 🛡️ 운영 도구 | 방장/관리자 권한, 참여자 내보내기, 관리자 패널, 방·메시지 관리 |
-| 🔔 알림과 설정 | 브라우저 알림, 알림 기록, 소리 설정, 글자 크기, 채팅 폭, YouTube 미리보기 설정 |
+| 🔔 알림과 설정 | 브라우저 알림, 알림 기록, 소리 설정, 글자 크기, 채팅 폭, YouTube 미리보기 설정 |\n| 🖥️ Windows 앱 | Electron 기반 설치형 앱, 바탕화면·시작 메뉴 바로가기, 웹 버전과 동일한 계정·채팅 데이터 |
 
 각 기능의 사용 조건과 제한은 [전체 기능 안내](FEATURES.md)에 정리했습니다.
 
@@ -71,7 +71,7 @@ RoomChat은 웹 브라우저에서 바로 사용할 수 있는 실시간 공개 
 - **호스팅:** GitHub Pages
 - **백엔드:** Supabase Database, Auth, Realtime, Storage, Edge Functions
 - **외부 미디어:** GIPHY GIF API, MyInstants 사운드보드 프록시
-- **화면:** 반응형 CSS와 모바일 전용 UI 규칙
+- **화면:** 반응형 CSS와 모바일 전용 UI 규칙\n- **Windows 앱:** Electron + electron-builder(NSIS 설치 프로그램)
 
 주요 파일: [index.html](index.html), [app.js](app.js), [social.js](social.js), [soundboard.js](soundboard.js), [styles.css](styles.css), [fonts.js](fonts.js), [config.js](config.js).
 
