@@ -10,9 +10,9 @@ html,body{width:100%!important;height:100%!important;margin:0!important;padding:
 .app-shell>:not(.chat-panel){display:none!important}
 .chat-panel{display:block!important;position:relative!important;width:100%!important;height:100%!important;min-width:0!important;min-height:0!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;background:transparent!important;overflow:hidden!important}
 .chat-panel>:not(#message-list):not(.composer-wrap):not(#roomchat-overlay-toolbar):not(#roomchat-overlay-restore){display:none!important}
-#roomchat-overlay-toolbar{position:absolute!important;top:6px!important;left:8px!important;right:8px!important;z-index:5!important;display:flex!important;align-items:center!important;gap:7px!important;height:25px!important;padding:0!important;background:transparent!important;-webkit-app-region:no-drag!important}
-#roomchat-overlay-toolbar>span:first-child{display:none!important}
-#roomchat-overlay-toolbar button{display:inline-flex!important;align-items:center!important;justify-content:center!important;width:25px!important;height:25px!important;margin:0!important;padding:0!important;border:0!important;border-radius:6px!important;background:rgba(255,255,255,.94)!important;color:#222!important;box-shadow:0 1px 4px #0005!important;cursor:pointer!important;font:700 17px Arial,sans-serif!important}
+#roomchat-overlay-toolbar{position:absolute!important;top:6px!important;left:8px!important;right:8px!important;z-index:5!important;display:flex!important;align-items:center!important;gap:7px!important;height:25px!important;padding:0 5px!important;background:rgba(0,0,0,.28)!important;border-radius:6px!important;-webkit-app-region:drag!important;cursor:move!important}
+#roomchat-overlay-toolbar .overlay-drag-handle{display:inline-flex!important;align-items:center!important;flex:1 1 auto!important;height:25px!important;padding-left:5px!important;color:#fff!important;font:700 12px Segoe UI,Arial,sans-serif!important;letter-spacing:.2px!important;-webkit-app-region:drag!important;user-select:none!important}
+#roomchat-overlay-toolbar button{display:inline-flex!important;align-items:center!important;justify-content:center!important;width:25px!important;height:25px!important;margin:0!important;padding:0!important;border:0!important;border-radius:6px!important;background:rgba(255,255,255,.94)!important;color:#222!important;box-shadow:0 1px 4px #0005!important;cursor:pointer!important;font:700 17px Arial,sans-serif!important;-webkit-app-region:no-drag!important}
 #roomchat-overlay-toolbar .overlay-controls{display:flex!important;margin-left:auto!important}
 #roomchat-overlay-toolbar .overlay-controls button{background:rgba(25,25,25,.58)!important;color:#fff!important}
 #message-list{position:absolute!important;top:37px!important;left:8px!important;right:40px!important;bottom:43px!important;display:block!important;min-height:0!important;height:auto!important;max-height:none!important;overflow-y:auto!important;overflow-x:hidden!important;padding:5px 7px!important;margin:0!important;background:rgba(0,0,0,.55)!important;border:0!important;border-radius:0!important;color:#fff!important}
@@ -126,7 +126,7 @@ function applyOverlayStyles() {
       if(panel && !document.getElementById('roomchat-overlay-toolbar')){
         const bar=document.createElement('div');
         bar.id='roomchat-overlay-toolbar';
-        bar.innerHTML='<button type="button" title="Roblox">◇</button><button type="button" data-action="fold" title="채팅 접기">▤</button><span class="overlay-controls"><button type="button" data-action="fold" title="접기">－</button></span>';
+        bar.innerHTML='<span class="overlay-drag-handle" title="여기를 잡고 오버레이 창 이동">RoomChat · 오버레이</span><button type="button" title="채팅">◇</button><span class="overlay-controls"><button type="button" data-action="fold" title="접기">－</button></span>';
         panel.prepend(bar);
         bar.addEventListener('click',event=>{
           const action=event.target?.dataset?.action;
@@ -152,6 +152,7 @@ function setOverlayMode(enabled) {
     normalBounds = mainWindow.getBounds();
     overlayMode = true;
     mainWindow.setAlwaysOnTop(true, "screen-saver");
+    mainWindow.setMovable(true);
     mainWindow.setOpacity(0.88);
     mainWindow.setBackgroundColor("#00000000");
     mainWindow.setIgnoreMouseEvents(false);
