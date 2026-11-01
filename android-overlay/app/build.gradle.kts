@@ -5,6 +5,13 @@ plugins {
 android {
     namespace = "com.xlg77.roomchatoverlay"
     compileSdk = 35
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+    kotlinOptions {
+        jvmTarget = "17"
+    }
     defaultConfig {
         applicationId = "com.xlg77.roomchatoverlay"
         minSdk = 26
