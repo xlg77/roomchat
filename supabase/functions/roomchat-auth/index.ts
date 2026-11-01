@@ -91,7 +91,7 @@ Deno.serve(async (request: Request) => {
     const password = input?.password;
 
     if (action === "issue_recovery") {
-      const accessToken = request.headers.get("authorization")?.replace(/^Bearer\\s+/iu, "") || "";
+      const accessToken = request.headers.get("authorization")?.replace(/^Bearer\s+/iu, "") || "";
       const { data: authData, error: authError } = accessToken
         ? await admin.auth.getUser(accessToken)
         : { data: { user: null }, error: new Error("Missing access token") };
