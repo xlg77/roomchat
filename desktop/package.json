@@ -1,6 +1,6 @@
 {
   "name": "roomchat-desktop",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "private": true,
   "description": "RoomChat Windows desktop application",
   "main": "main.cjs",
