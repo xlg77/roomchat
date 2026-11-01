@@ -54,8 +54,8 @@ class OverlayService : Service() {
             setOnClickListener { togglePanel() }
             setOnTouchListener(DragTouchListener { dx, dy ->
                 bubbleParams?.let { p ->
-                    p.x -= dx
-                    p.y -= dy
+                    p.x += dx.toInt()
+                    p.y += dy.toInt()
                     runCatching { windowManager.updateViewLayout(this, p) }
                 }
             })
@@ -85,7 +85,23 @@ class OverlayService : Service() {
             loadUrl("https://xlg77.github.io/roomchat/")
         }
         webView = page
-        container.addView(page, FrameLayout.LayoutParams(-1, -1))
+        container.addView(page, FrameLayout.LayoutParams(-1, -1).apply { topMargin = dp(42) })
+        val dragBar = TextView(this).apply {
+            text = "RoomChat  ·  드래그해서 이동"
+            textSize = 14f
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(dp(12), 0, dp(48), 0)
+            setTextColor(Color.WHITE)
+            setBackgroundColor(Color.rgb(35, 115, 235))
+            setOnTouchListener(DragTouchListener { dx, dy ->
+                panelParams?.let { p ->
+                    p.x += dx.toInt()
+                    p.y += dy.toInt()
+                    runCatching { windowManager.updateViewLayout(container, p) }
+                }
+            })
+        }
+        container.addView(dragBar, FrameLayout.LayoutParams(-1, dp(42), Gravity.TOP))
         val close = TextView(this).apply {
             text = "×"
             textSize = 25f
