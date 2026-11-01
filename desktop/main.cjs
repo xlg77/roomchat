@@ -58,12 +58,11 @@ function applyOverlayStyles() {
       if(panel && !document.getElementById('roomchat-overlay-toolbar')){
         const bar=document.createElement('div');
         bar.id='roomchat-overlay-toolbar';
-        bar.innerHTML='<span>RoomChat · 오버레이</span><span class="overlay-controls"><button type="button" data-action="fold" title="접기">－</button><button type="button" data-action="normal" title="일반 모드">□</button></span>';
+        bar.innerHTML='<span>RoomChat · 오버레이</span><span class="overlay-controls"><button type="button" data-action="fold" title="접기">－</button></span>';
         panel.prepend(bar);
         bar.addEventListener('click',event=>{
           const action=event.target?.dataset?.action;
           if(action==='fold') panel.classList.add('roomchat-overlay-folded');
-          if(action==='normal') window.__roomchatOverlayExit?.();
         });
         const restore=document.createElement('button');
         restore.id='roomchat-overlay-restore';
