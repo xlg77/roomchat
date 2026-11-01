@@ -53,6 +53,55 @@ html,body{width:100%!important;height:100%!important;margin:0!important;padding:
 .message-content *, .message-content a,.message-content .mention{color:#fff!important;text-shadow:0 1px 3px rgba(0,0,0,.95)!important}
 .message-row .message-reactions,.message-row .admin-action,.message-row button,.message-row [role=button]{display:none!important}
 
+
+/* Final inline chat layout: keep nickname, separator and message on one flow line. */
+#message-list .message-row,
+#message-list .message-row .message-body{
+  display:block!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+}
+#message-list .message-row .message-body > .message-meta{
+  display:inline!important;
+  width:auto!important;
+  max-width:none!important;
+  margin:0 0 0 0!important;
+  padding:0!important;
+  vertical-align:baseline!important;
+  white-space:normal!important;
+  line-height:20px!important;
+}
+#message-list .message-row .message-body > .message-meta .styled-name{
+  display:inline!important;
+  width:auto!important;
+  white-space:normal!important;
+}
+#message-list .message-row .message-body > .message-meta .verified-box,
+#message-list .message-row .message-body > .message-meta .verified-mark,
+#message-list .message-row .message-body > .message-meta .verified-badge,
+#message-list .message-row .message-body > .message-meta .tag-slot,
+#message-list .message-row .message-body > .message-meta time,
+#message-list .message-row .message-body > .message-meta .message-edited,
+#message-list .message-row .message-body > .message-meta .message-pinned-label{
+  display:none!important;
+}
+#message-list .message-row .message-body > .message-content{
+  display:inline!important;
+  width:auto!important;
+  max-width:none!important;
+  margin:0!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  vertical-align:baseline!important;
+  white-space:normal!important;
+  overflow-wrap:anywhere!important;
+  word-break:normal!important;
+  line-height:20px!important;
+}
+
 /* Final overlay text override: beat website nickname-gradient and dark-theme fill rules. */
 #message-list .message-row .message-meta,
 #message-list .message-row .message-meta .styled-name,
