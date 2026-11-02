@@ -259,11 +259,11 @@ function applyOverlayStyles() {
 
 let overlayFolded = false;
 function setOverlayFolded(folded) {
-  if (!mainWindow || mainWindow.isDestroyed() || !overlayMode) return;
+  if (!mainWindow || mainWindow.isDestroyed() || !overlayMode || overlayFolded === folded) return;
   overlayFolded = folded;
   const bounds = mainWindow.getBounds();
   mainWindow.setBounds({ x: bounds.x, y: bounds.y, width: 520, height: folded ? 28 : 280 });
-  mainWindow.webContents.executeJavaScript(
+  mainWindow.webContents.executeJavaScript(`
     (() => {
       const panel = document.querySelector('.chat-panel');
       const button = document.querySelector('#roomchat-overlay-toolbar [data-action="fold"], #roomchat-overlay-toolbar [data-action="restore"]');
@@ -275,7 +275,7 @@ function setOverlayFolded(folded) {
         button.setAttribute('aria-label', button.title);
       }
     })()
-  ).catch(() => {});
+  `).catch(() => {});
 }
 
 function setOverlayMode(enabled) {
@@ -292,7 +292,7 @@ function setOverlayMode(enabled) {
     if (mainWindow.isFullScreen()) mainWindow.setFullScreen(false);
     if (mainWindow.isMaximized()) mainWindow.unmaximize();
     mainWindow.setResizable(false);
-    mainWindow.setMinimumSize(520, 280);
+    mainWindow.setMinimumSize(520, 28);
     mainWindow.setMaximumSize(520, 280);
     mainWindow.setBounds({ x: 20, y: 20, width: 520, height: 280 });
     mainWindow.setTitle("RoomChat");
