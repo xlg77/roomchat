@@ -6,6 +6,7 @@ const APP_URL = "https://xlg77.github.io/roomchat/";
 const APP_ORIGIN = new URL(APP_URL).origin;
 const OVERLAY_CSS = `
 html,body{width:100%!important;height:100%!important;margin:0!important;padding:0!important;overflow:hidden!important;background:transparent!important}
+#roomchat-overlay-toggle{display:none!important;visibility:hidden!important;pointer-events:none!important}
 #app-loading{display:none!important}
 .app-shell{display:block!important;width:100%!important;height:100vh!important;min-height:0!important;margin:0!important;padding:0!important;overflow:hidden!important;background:transparent!important;box-shadow:none!important}
 .app-shell>:not(.chat-panel){display:none!important}
@@ -200,7 +201,7 @@ function createOverlayToggleButtonWindow() {
         button.id = 'roomchat-overlay-toggle';
         button.type = 'button';
         button.style.cssText = 'position:fixed!important;top:12px!important;right:14px!important;z-index:2147483647!important;display:flex!important;align-items:center!important;justify-content:center!important;width:40px!important;height:40px!important;padding:0!important;border:0!important;border-radius:50%!important;background:#2676c9!important;color:#fff!important;font:700 23px/1 "Segoe UI Emoji",sans-serif!important;box-shadow:0 2px 10px #0004!important;cursor:pointer!important;';
-        button.addEventListener('click', () => window.open(${JSON.stringify(overlayMode ? "roomchat://close-overlay" : "roomchat://toggle-overlay")}));
+        button.addEventListener('click', () => window.open('roomchat://toggle-overlay'));
         document.body.appendChild(button);
       }
       button.textContent = '💬';
@@ -214,7 +215,7 @@ function updateOverlayToggleButton() {
   if (!mainWindow || mainWindow.isDestroyed()) return;
   mainWindow.webContents.executeJavaScript(`
     const button = document.getElementById('roomchat-overlay-toggle');
-    if (button) { button.textContent = '💬'; button.title = 'RoomChat 채팅 열기'; button.setAttribute('aria-label', button.title); button.onclick = () => window.open('roomchat://toggle-overlay'); }
+    if (button) { button.textContent = '💬'; button.title = 'RoomChat 채팅 열기'; button.setAttribute('aria-label', button.title); }
   `).catch(() => {});
 }
 
