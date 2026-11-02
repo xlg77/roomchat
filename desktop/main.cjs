@@ -199,14 +199,13 @@ function createOverlayToggleButtonWindow() {
         button = document.createElement('button');
         button.id = 'roomchat-overlay-toggle';
         button.type = 'button';
-        button.style.cssText = 'position:fixed!important;top:12px!important;right:14px!important;z-index:2147483647!important;padding:9px 14px!important;border:0!important;border-radius:9px!important;background:#2676c9!important;color:#fff!important;font:700 13px Segoe UI,Arial,sans-serif!important;box-shadow:0 2px 10px #0004!important;cursor:pointer!important;';
+        button.style.cssText = 'position:fixed!important;top:12px!important;right:14px!important;z-index:2147483647!important;display:flex!important;align-items:center!important;justify-content:center!important;width:40px!important;height:40px!important;padding:0!important;border:0!important;border-radius:50%!important;background:#2676c9!important;color:#fff!important;font:700 23px/1 "Segoe UI Emoji",sans-serif!important;box-shadow:0 2px 10px #0004!important;cursor:pointer!important;';
         button.addEventListener('click', () => window.open(${JSON.stringify(overlayMode ? "roomchat://close-overlay" : "roomchat://toggle-overlay")}));
         document.body.appendChild(button);
       }
-      button.textContent = ${JSON.stringify(overlayMode ? "×" : "오버레이 켜기")};
-      button.title = overlayMode ? '오버레이 닫기' : '오버레이 켜기';
+      button.textContent = '💬';
+      button.title = 'RoomChat 채팅 열기';
       button.setAttribute('aria-label', button.title);
-      if (overlayMode) button.style.cssText += 'width:30px!important;height:30px!important;padding:0!important;border-radius:50%!important;font:700 22px Arial,sans-serif!important;';
     })();
   `).catch(error => console.error('[RoomChat overlay button]', error));
 }
@@ -215,7 +214,7 @@ function updateOverlayToggleButton() {
   if (!mainWindow || mainWindow.isDestroyed()) return;
   mainWindow.webContents.executeJavaScript(`
     const button = document.getElementById('roomchat-overlay-toggle');
-    if (button) { button.textContent = ${JSON.stringify(overlayMode ? "×" : "오버레이 켜기")}; button.title = ${JSON.stringify(overlayMode ? "오버레이 닫기" : "오버레이 켜기")}; button.setAttribute('aria-label', button.title); button.onclick = () => window.open(${JSON.stringify(overlayMode ? "roomchat://close-overlay" : "roomchat://toggle-overlay")}); }
+    if (button) { button.textContent = '💬'; button.title = 'RoomChat 채팅 열기'; button.setAttribute('aria-label', button.title); button.onclick = () => window.open('roomchat://toggle-overlay'); }
   `).catch(() => {});
 }
 
@@ -264,7 +263,7 @@ function setOverlayMode(enabled) {
     mainWindow.setMinimumSize(520, 280);
     mainWindow.setMaximumSize(520, 280);
     mainWindow.setBounds({ x: 20, y: 20, width: 520, height: 280 });
-    mainWindow.setTitle("RoomChat · 채팅 오버레이");
+    mainWindow.setTitle("RoomChat");
     mainWindow.setMenuBarVisibility(false);
     applyOverlayStyles();
     updateOverlayToggleButton();
