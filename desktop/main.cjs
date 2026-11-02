@@ -231,6 +231,8 @@ function applyOverlayStyles() {
       let style=document.getElementById(id);
       if(!style){style=document.createElement('style');style.id=id;document.head.appendChild(style);}
       style.textContent=${JSON.stringify(OVERLAY_CSS)};
+      const launcher=document.getElementById('roomchat-overlay-toggle');
+      if(launcher) launcher.style.setProperty('display','none','important');
       const panel=document.querySelector('.chat-panel');
       if(panel && !document.getElementById('roomchat-overlay-toolbar')){
         const bar=document.createElement('div');
@@ -286,7 +288,7 @@ function setOverlayMode(enabled) {
     }
     mainWindow.setTitle("RoomChat");
     mainWindow.setMenuBarVisibility(false);
-    mainWindow.webContents.executeJavaScript("document.getElementById('roomchat-windows-overlay-style')?.remove();document.getElementById('roomchat-overlay-toolbar')?.remove();document.getElementById('roomchat-overlay-restore')?.remove();document.querySelector('.chat-panel')?.classList.remove('roomchat-overlay-folded')").catch(() => {});
+    mainWindow.webContents.executeJavaScript("document.getElementById('roomchat-windows-overlay-style')?.remove();const launcher=document.getElementById('roomchat-overlay-toggle');if(launcher)launcher.style.removeProperty('display');document.getElementById('roomchat-overlay-toolbar')?.remove();document.getElementById('roomchat-overlay-restore')?.remove();document.querySelector('.chat-panel')?.classList.remove('roomchat-overlay-folded')").catch(() => {});
   }
   updateOverlayToggleButton();
   positionOverlayToggleButton();
