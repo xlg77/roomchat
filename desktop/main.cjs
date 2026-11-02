@@ -11,11 +11,10 @@ html,body{width:100%!important;height:100%!important;margin:0!important;padding:
 .app-shell>:not(.chat-panel){display:none!important}
 .chat-panel{display:block!important;position:relative!important;width:100%!important;height:100%!important;min-width:0!important;min-height:0!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;background:transparent!important;overflow:hidden!important}
 .chat-panel>:not(#message-list):not(.composer-wrap):not(#roomchat-overlay-toolbar):not(#roomchat-overlay-restore){display:none!important}
-#roomchat-overlay-toolbar{position:absolute!important;top:0!important;left:0!important;right:0!important;z-index:5!important;display:flex!important;align-items:center!important;gap:4px!important;height:20px!important;padding:0 3px!important;background:rgba(0,0,0,.34)!important;border-radius:0!important;-webkit-app-region:no-drag!important;cursor:move!important}
-#roomchat-overlay-toolbar .overlay-drag-handle{display:inline-flex!important;align-items:center!important;flex:1 1 auto!important;height:20px!important;padding-left:4px!important;color:rgba(255,255,255,.9)!important;font:600 10px Segoe UI,Arial,sans-serif!important;-webkit-app-region:no-drag!important;user-select:none!important}
-#roomchat-overlay-toolbar button{display:inline-flex!important;align-items:center!important;justify-content:center!important;width:19px!important;height:18px!important;margin:0!important;padding:0!important;border:0!important;border-radius:3px!important;background:rgba(255,255,255,.82)!important;color:#222!important;box-shadow:none!important;cursor:pointer!important;font:700 13px Arial,sans-serif!important;-webkit-app-region:no-drag!important}
+#roomchat-overlay-toolbar{position:absolute!important;top:0!important;left:0!important;right:0!important;z-index:5!important;display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:4px!important;height:24px!important;padding:0 5px!important;background:rgba(0,0,0,.28)!important;border-radius:0!important;-webkit-app-region:no-drag!important;cursor:default!important}
+
+#roomchat-overlay-toolbar button{display:inline-flex!important;align-items:center!important;justify-content:center!important;width:24px!important;height:24px!important;margin:0!important;padding:0!important;border:0!important;border-radius:50%!important;background:rgba(20,20,20,.72)!important;color:#fff!important;box-shadow:none!important;cursor:pointer!important;font:700 20px/1 Arial,sans-serif!important;-webkit-app-region:no-drag!important}
 #roomchat-overlay-toolbar .overlay-controls{display:flex!important;margin-left:auto!important}
-#roomchat-overlay-toolbar .overlay-controls button{background:rgba(30,30,30,.58)!important;color:#fff!important}
 #message-list{position:absolute!important;top:22px!important;left:0!important;right:0!important;bottom:38px!important;display:block!important;min-height:0!important;height:auto!important;max-height:none!important;overflow-y:auto!important;overflow-x:hidden!important;padding:10px 12px!important;margin:0!important;background:rgba(0,0,0,.76)!important;border:1px solid rgba(255,255,255,.18)!important;border-radius:2px!important;color:#fff!important;text-shadow:0 1px 2px #000!important}
 #message-list:empty:before{content:"Please chat '/?' for a list of chat commands.";display:block;color:#f4f4f4;font:600 11px Georgia,serif;line-height:14px}
 .message-row{display:block!important;position:relative!important;max-width:100%!important;margin:0 0 7px!important;padding:0!important;background:transparent!important;border:0!important;box-shadow:none!important;color:#fff!important;font:600 14px "Segoe UI",Arial,sans-serif!important;line-height:19px!important;text-shadow:0 1px 2px #000!important}
@@ -35,9 +34,7 @@ html,body{width:100%!important;height:100%!important;margin:0!important;padding:
 #message-input::placeholder{color:#555!important;opacity:1!important}
 #send-button{display:none!important}
 .composer-foot,.toast,.mention-popup{display:none!important}
-.chat-panel.roomchat-overlay-folded #message-list,.chat-panel.roomchat-overlay-folded .composer-wrap{display:none!important}
-#roomchat-overlay-restore{display:none!important;position:absolute!important;right:5px!important;bottom:5px!important;width:28px!important;height:28px!important;border:0!important;border-radius:50%!important;background:#2676c9!important;color:#fff!important;font-size:15px!important}
-.chat-panel.roomchat-overlay-folded #roomchat-overlay-restore{display:flex!important;align-items:center!important;justify-content:center!important}
+
 
 
 /* Roblox-like inline nickname and high-contrast chat text */
@@ -184,19 +181,6 @@ let mainWindow = null;
 let toggleButtonWindow = null;
 let overlayMode = false;
 let normalBounds = { width: 1440, height: 900, x: undefined, y: undefined };
-let overlayDragState = null;
-
-ipcMain.on("roomchat-overlay-drag", (event, phase, screenX, screenY) => {
-  if (!mainWindow || mainWindow.isDestroyed() || event.sender !== mainWindow.webContents || !overlayMode) return;
-  if (!Number.isFinite(screenX) || !Number.isFinite(screenY)) return;
-  if (phase === "start") {
-    const bounds = mainWindow.getBounds();
-    overlayDragState = { pointerX: screenX, pointerY: screenY, windowX: bounds.x, windowY: bounds.y };
-  } else if (phase === "move" && overlayDragState) {
-    mainWindow.setPosition(Math.round(overlayDragState.windowX + screenX - overlayDragState.pointerX), Math.round(overlayDragState.windowY + screenY - overlayDragState.pointerY));
-  } else if (phase === "end") overlayDragState = null;
-});
-
 function isTrustedAppUrl(value) {
   try {
     const url = new URL(value);
@@ -219,7 +203,10 @@ function createOverlayToggleButtonWindow() {
         button.addEventListener('click', () => window.open('roomchat://toggle-overlay'));
         document.body.appendChild(button);
       }
-      button.textContent = ${JSON.stringify(overlayMode ? "오버레이 끄기" : "오버레이 켜기")};
+      button.textContent = ${JSON.stringify(overlayMode ? "×" : "오버레이 켜기")};
+      button.title = overlayMode ? '오버레이 닫기' : '오버레이 켜기';
+      button.setAttribute('aria-label', button.title);
+      if (overlayMode) button.style.cssText += 'width:30px!important;height:30px!important;padding:0!important;border-radius:50%!important;font:700 22px Arial,sans-serif!important;';
     })();
   `).catch(error => console.error('[RoomChat overlay button]', error));
 }
@@ -228,7 +215,7 @@ function updateOverlayToggleButton() {
   if (!mainWindow || mainWindow.isDestroyed()) return;
   mainWindow.webContents.executeJavaScript(`
     const button = document.getElementById('roomchat-overlay-toggle');
-    if (button) button.textContent = ${JSON.stringify(overlayMode ? "오버레이 끄기" : "오버레이 켜기")};
+    if (button) { button.textContent = ${JSON.stringify(overlayMode ? "×" : "오버레이 켜기")}; button.title = ${JSON.stringify(overlayMode ? "오버레이 닫기" : "오버레이 켜기")}; button.setAttribute('aria-label', button.title); }
   `).catch(() => {});
 }
 
@@ -248,20 +235,12 @@ function applyOverlayStyles() {
       if(panel && !document.getElementById('roomchat-overlay-toolbar')){
         const bar=document.createElement('div');
         bar.id='roomchat-overlay-toolbar';
-        bar.innerHTML='<span class="overlay-drag-handle" title="여기를 잡고 오버레이 창 이동">RoomChat · 오버레이</span><button type="button" title="채팅">◇</button><span class="overlay-controls"><button type="button" data-action="fold" title="접기">－</button></span>';
+        bar.innerHTML='<span class="overlay-controls"><button type="button" data-action="close" title="오버레이 닫기" aria-label="오버레이 닫기">×</button></span>';
         panel.prepend(bar);
-        bar.querySelector('.overlay-drag-handle').addEventListener('mousedown',event=>{if(event.button!==0)return;event.preventDefault();window.roomchatOverlay?.beginDrag(event.screenX,event.screenY);const move=e=>window.roomchatOverlay?.moveDrag(e.screenX,e.screenY);const end=e=>{window.roomchatOverlay?.endDrag(e.screenX,e.screenY);window.removeEventListener('mousemove',move,true);window.removeEventListener('mouseup',end,true);};window.addEventListener('mousemove',move,true);window.addEventListener('mouseup',end,true);});
         bar.addEventListener('click',event=>{
           const action=event.target?.dataset?.action;
-          if(action==='fold') panel.classList.add('roomchat-overlay-folded');
+          if(action==='close') window.open('roomchat://close-overlay');
         });
-        const restore=document.createElement('button');
-        restore.id='roomchat-overlay-restore';
-        restore.type='button';
-        restore.title='채팅 다시 열기';
-        restore.textContent='R';
-        restore.addEventListener('click',()=>panel.classList.remove('roomchat-overlay-folded'));
-        panel.append(restore);
       }
       const input=document.querySelector('#message-input');
       if(input) input.placeholder='To chat click here or press "/" key';
@@ -275,7 +254,7 @@ function setOverlayMode(enabled) {
     normalBounds = mainWindow.getBounds();
     overlayMode = true;
     mainWindow.setAlwaysOnTop(true, "screen-saver");
-    mainWindow.setMovable(true);
+    mainWindow.setMovable(false);
     mainWindow.setOpacity(0.88);
     mainWindow.setBackgroundColor("#00000000");
     mainWindow.setIgnoreMouseEvents(false);
@@ -284,7 +263,7 @@ function setOverlayMode(enabled) {
     mainWindow.setResizable(false);
     mainWindow.setMinimumSize(520, 280);
     mainWindow.setMaximumSize(520, 280);
-    mainWindow.setBounds({ x: 20, y: 40, width: 520, height: 280 });
+    mainWindow.setBounds({ x: 20, y: 20, width: 520, height: 280 });
     mainWindow.setTitle("RoomChat · 채팅 오버레이");
     mainWindow.setMenuBarVisibility(false);
     applyOverlayStyles();
@@ -292,6 +271,7 @@ function setOverlayMode(enabled) {
   } else {
     overlayMode = false;
     mainWindow.setAlwaysOnTop(false);
+    mainWindow.setMovable(true);
     mainWindow.setOpacity(1);
     mainWindow.setBackgroundColor("#e8f8ff");
     mainWindow.setIgnoreMouseEvents(false);
@@ -361,6 +341,11 @@ function createWindow() {
     if (url === "roomchat://toggle-overlay") {
       setOverlayMode(!overlayMode);
       if (mainWindow && !mainWindow.isDestroyed()) { mainWindow.show(); mainWindow.focus(); }
+      return { action: "deny" };
+    }
+    if (url === "roomchat://close-overlay") {
+      setOverlayMode(false);
+      if (mainWindow && !mainWindow.isDestroyed()) mainWindow.minimize();
       return { action: "deny" };
     }
     if (/^https:\/\//i.test(url) && !isTrustedAppUrl(url)) shell.openExternal(url);
