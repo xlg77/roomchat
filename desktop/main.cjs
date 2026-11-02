@@ -200,7 +200,7 @@ function createOverlayToggleButtonWindow() {
         button.id = 'roomchat-overlay-toggle';
         button.type = 'button';
         button.style.cssText = 'position:fixed!important;top:12px!important;right:14px!important;z-index:2147483647!important;padding:9px 14px!important;border:0!important;border-radius:9px!important;background:#2676c9!important;color:#fff!important;font:700 13px Segoe UI,Arial,sans-serif!important;box-shadow:0 2px 10px #0004!important;cursor:pointer!important;';
-        button.addEventListener('click', () => window.open('roomchat://toggle-overlay'));
+        button.addEventListener('click', () => window.open(${JSON.stringify(overlayMode ? "roomchat://close-overlay" : "roomchat://toggle-overlay")}));
         document.body.appendChild(button);
       }
       button.textContent = ${JSON.stringify(overlayMode ? "×" : "오버레이 켜기")};
