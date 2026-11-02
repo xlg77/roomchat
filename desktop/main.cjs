@@ -215,7 +215,7 @@ function updateOverlayToggleButton() {
   if (!mainWindow || mainWindow.isDestroyed()) return;
   mainWindow.webContents.executeJavaScript(`
     const button = document.getElementById('roomchat-overlay-toggle');
-    if (button) { button.textContent = ${JSON.stringify(overlayMode ? "×" : "오버레이 켜기")}; button.title = ${JSON.stringify(overlayMode ? "오버레이 닫기" : "오버레이 켜기")}; button.setAttribute('aria-label', button.title); }
+    if (button) { button.textContent = ${JSON.stringify(overlayMode ? "×" : "오버레이 켜기")}; button.title = ${JSON.stringify(overlayMode ? "오버레이 닫기" : "오버레이 켜기")}; button.setAttribute('aria-label', button.title); button.onclick = () => window.open(${JSON.stringify(overlayMode ? "roomchat://close-overlay" : "roomchat://toggle-overlay")}); }
   `).catch(() => {});
 }
 
