@@ -100,6 +100,11 @@ html,body{width:100%!important;height:100%!important;margin:0!important;padding:
   line-height:20px!important;
 }
 
+/* Folded Roblox-style overlay: leave only the thin toolbar visible. */
+.chat-panel.roomchat-overlay-folded #message-list,
+.chat-panel.roomchat-overlay-folded .composer-wrap{display:none!important}
+.chat-panel.roomchat-overlay-folded #roomchat-overlay-toolbar{height:28px!important}
+
 /* Final overlay text override: beat website nickname-gradient and dark-theme fill rules. */
 #message-list .message-row .message-meta,
 #message-list .message-row .message-meta .styled-name,
@@ -237,11 +242,13 @@ function applyOverlayStyles() {
       if(panel && !document.getElementById('roomchat-overlay-toolbar')){
         const bar=document.createElement('div');
         bar.id='roomchat-overlay-toolbar';
-        bar.innerHTML='<span class="overlay-controls"><button type="button" data-action="close" title="오버레이 닫기" aria-label="오버레이 닫기">×</button></span>';
+        bar.innerHTML='<span class="overlay-controls"><button type="button" data-action="fold" title="채팅 바 숨기기" aria-label="채팅 바 숨기기">−</button><button type="button" data-action="close" title="오버레이 닫기" aria-label="오버레이 닫기">×</button></span>';
         panel.prepend(bar);
         bar.addEventListener('click',event=>{
           const action=event.target?.dataset?.action;
           if(action==='close') window.open('roomchat://close-overlay');
+          if(action==='fold') window.open('roomchat://fold-overlay');
+          if(action==='restore') window.open('roomchat://restore-overlay');
         });
       }
       const input=document.querySelector('#message-input');
@@ -250,9 +257,31 @@ function applyOverlayStyles() {
   `).catch(() => {});
 }
 
+let overlayFolded = false;
+function setOverlayFolded(folded) {
+  if (!mainWindow || mainWindow.isDestroyed() || !overlayMode) return;
+  overlayFolded = folded;
+  const bounds = mainWindow.getBounds();
+  mainWindow.setBounds({ x: bounds.x, y: bounds.y, width: 520, height: folded ? 28 : 280 });
+  mainWindow.webContents.executeJavaScript(
+    (() => {
+      const panel = document.querySelector('.chat-panel');
+      const button = document.querySelector('#roomchat-overlay-toolbar [data-action="fold"], #roomchat-overlay-toolbar [data-action="restore"]');
+      if (panel) panel.classList.toggle('roomchat-overlay-folded', ${folded});
+      if (button) {
+        button.dataset.action = ${folded} ? 'restore' : 'fold';
+        button.textContent = ${folded} ? '□' : '−';
+        button.title = ${folded} ? '채팅 바 펼치기' : '채팅 바 숨기기';
+        button.setAttribute('aria-label', button.title);
+      }
+    })()
+  ).catch(() => {});
+}
+
 function setOverlayMode(enabled) {
   if (!mainWindow || mainWindow.isDestroyed() || overlayMode === enabled) return;
   if (enabled) {
+    overlayFolded = false;
     normalBounds = mainWindow.getBounds();
     overlayMode = true;
     mainWindow.setAlwaysOnTop(true, "screen-saver");
@@ -271,6 +300,7 @@ function setOverlayMode(enabled) {
     applyOverlayStyles();
     updateOverlayToggleButton();
   } else {
+    overlayFolded = false;
     overlayMode = false;
     mainWindow.setAlwaysOnTop(false);
     mainWindow.setMovable(true);
@@ -342,6 +372,15 @@ function createWindow() {
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     if (url === "roomchat://toggle-overlay") {
       setOverlayMode(!overlayMode);
+      if (mainWindow && !mainWindow.isDestroyed()) { mainWindow.show(); mainWindow.focus(); }
+      return { action: "deny" };
+    }
+    if (url === "roomchat://fold-overlay") {
+      setOverlayFolded(true);
+      return { action: "deny" };
+    }
+    if (url === "roomchat://restore-overlay") {
+      setOverlayFolded(false);
       if (mainWindow && !mainWindow.isDestroyed()) { mainWindow.show(); mainWindow.focus(); }
       return { action: "deny" };
     }
