@@ -5077,3 +5077,44 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,[role="button"]:
 .attachment-preview video{width:64px;height:42px;border-radius:8px;object-fit:cover;background:#111;}
 .video-attach-button{font-size:13px;font-weight:800;}
 @media(max-width:640px){.message-video{width:100%;max-width:calc(100vw - 86px);}.message-video-player{max-height:260px;}.attachment-preview{max-width:100%;}}
+
+
+/* Mobile layout correction: keep desktop-only controls out of the phone layout
+   and provide a dedicated, always-visible Android app install entry. */
+.mobile-app-install{display:none}
+@media(max-width:640px){
+  .channel-topic,.channel-divider{display:none!important}
+  .keyboard-hint{display:none!important}
+  .mobile-room-strip{height:48px;gap:6px;padding:0 9px;overflow:hidden}
+  .mobile-room-strip>.eyebrow{font-size:9px;letter-spacing:0}
+  .mobile-room-list{gap:5px;overflow-x:auto;overscroll-behavior-x:contain}
+  .mobile-room-chip{font-size:10px;padding:7px 8px}
+  .mobile-add-room{width:27px;height:27px;flex:none}
+  .mobile-app-install{
+    display:inline-flex;align-items:center;justify-content:center;flex:none;
+    min-height:29px;padding:0 9px;border:1px solid #8bc9e9;border-radius:9px;
+    background:#e4f6ff;color:#126b9b;font-size:10px;font-weight:800;
+    text-decoration:none;white-space:nowrap;
+  }
+  .mobile-overlay-download{display:none!important}
+  .desktop-app-download{display:none!important}
+  .topbar{height:52px;min-height:52px;padding:0 10px;gap:6px}
+  .channel-heading{gap:6px;flex:1;min-width:0}
+  .channel-hash{font-size:23px}
+  .current-room-name{font-size:14px;overflow:hidden;text-overflow:ellipsis}
+  .top-actions{gap:5px;max-width:55%;overflow-x:auto;scrollbar-width:none}
+  .top-actions::-webkit-scrollbar{display:none}
+  .header-tool{height:30px;padding:0 7px;font-size:10px;white-space:nowrap}
+  .presence-tool{gap:4px}
+  .room-banner{margin:8px 9px;padding:12px;min-height:82px}
+  .room-banner h1{font-size:19px}
+  .message-tools{padding-left:10px;padding-right:10px}
+  .message-search{min-height:36px;font-size:13px}
+  .message-list{padding-left:10px;padding-right:10px}
+  .composer-wrap{padding-left:8px;padding-right:8px}
+  .composer{gap:4px}
+  .composer textarea{font-size:14px;min-width:0}
+}
+@media(min-width:641px){
+  .mobile-app-install{display:none!important}
+}
