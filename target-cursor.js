@@ -212,8 +212,7 @@ export default function initTargetCursor(options = {}) {
     }
     wake();
   };
-  const onPointerLeave = event => {
-    if (event.pointerType !== 'mouse') return;
+  const onPointerLeave = () => {
     pointer.inside = false; pointer.pressed = false; lockOn(null); hideCursor(); wake();
   };
   const onScroll = () => {
@@ -225,7 +224,7 @@ export default function initTargetCursor(options = {}) {
   window.addEventListener('pointerdown', onPointerDown, { passive: true });
   window.addEventListener('pointerup', onPointerUp, { passive: true });
   window.addEventListener('pointercancel', onPointerUp, { passive: true });
-  window.addEventListener('pointerout', onPointerLeave, { passive: true });
+  document.documentElement.addEventListener('pointerleave', onPointerLeave);
   window.addEventListener('scroll', onScroll, { passive: true, capture: true });
   window.addEventListener('blur', onPointerLeave);
 
@@ -237,7 +236,7 @@ export default function initTargetCursor(options = {}) {
     window.removeEventListener('pointerdown', onPointerDown);
     window.removeEventListener('pointerup', onPointerUp);
     window.removeEventListener('pointercancel', onPointerUp);
-    window.removeEventListener('pointerout', onPointerLeave);
+    document.documentElement.removeEventListener('pointerleave', onPointerLeave);
     window.removeEventListener('scroll', onScroll, true);
     window.removeEventListener('blur', onPointerLeave);
     style.remove(); root.remove();
