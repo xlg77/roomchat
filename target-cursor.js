@@ -40,8 +40,39 @@ export default function initTargetCursor(options = {}) {
   const root = document.createElement('div');
   root.className = 'target-cursor';
   root.setAttribute('aria-hidden', 'true');
+  root.setAttribute('popover', 'manual');
   root.innerHTML = '<span class="target-cursor__corner"></span><span class="target-cursor__corner"></span><span class="target-cursor__corner"></span><span class="target-cursor__corner"></span><span class="target-cursor__dot"></span><span class="target-cursor__label"></span>';
   document.body.append(root);
+
+  // Popovers live in the browser's top layer, above ordinary page stacking contexts.
+  // Re-open after dialogs/popovers so the cursor stays above RoomChat's own overlays.
+  let usingTopLayer = false;
+  try {
+    if (typeof root.showPopover === 'function') {
+      root.showPopover();
+      usingTopLayer = true;
+    }
+  } catch { /* Keep the high-z-index fallback for older browsers. */ }
+
+  const bringCursorToFront = () => {
+    if (!usingTopLayer || destroyed || !root.isConnected) return;
+    try {
+      if (root.matches(':popover-open')) root.hidePopover();
+      root.showPopover();
+    } catch { /* The fallback layer remains visible if top-layer APIs are unavailable. */ }
+  };
+  const onTopLayerToggle = event => {
+    if (event.target !== root && (event.target instanceof HTMLDialogElement || event.target instanceof HTMLElement && event.target.hasAttribute('popover'))) {
+      queueMicrotask(bringCursorToFront);
+    }
+  };
+  document.addEventListener('toggle', onTopLayerToggle, true);
+  const topLayerObserver = new MutationObserver(records => {
+    if (records.some(record => record.type === 'attributes' && record.attributeName === 'open' && record.target !== root)) {
+      queueMicrotask(bringCursorToFront);
+    }
+  });
+  topLayerObserver.observe(document.documentElement, { subtree: true, attributes: true, attributeFilter: ['open'] });
 
   const corners = [...root.querySelectorAll('.target-cursor__corner')];
   const dot = root.querySelector('.target-cursor__dot');
@@ -239,6 +270,9 @@ export default function initTargetCursor(options = {}) {
     document.documentElement.removeEventListener('pointerleave', onPointerLeave);
     window.removeEventListener('scroll', onScroll, true);
     window.removeEventListener('blur', onPointerLeave);
+    document.removeEventListener('toggle', onTopLayerToggle, true);
+    topLayerObserver.disconnect();
+    if (usingTopLayer && root.matches(':popover-open')) root.hidePopover();
     style.remove(); root.remove();
     if (window.__roomchatTargetCursorCleanup === cleanup) delete window.__roomchatTargetCursorCleanup;
   };
