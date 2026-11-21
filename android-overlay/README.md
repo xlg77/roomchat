@@ -1,6 +1,6 @@
-# RoomChat Android Overlay
+# RoomChat Android
 
-Android companion app source for showing RoomChat in a draggable window above other apps.
+RoomChat Android is a single APK containing the normal RoomChat app and its optional floating chat overlay.
 
 ## Build
 
@@ -8,21 +8,24 @@ Android companion app source for showing RoomChat in a draggable window above ot
 - JDK 17
 - Android SDK Platform 35
 
-Open this `android-overlay` folder in Android Studio and build the `app` debug variant.
+Open this `android-overlay` folder in Android Studio and build the `app` debug variant. GitHub Actions also builds and publishes a prerelease APK when this project changes.
 
 ## Use
 
-1. Install the generated APK on an Android device.
-2. Open **RoomChat 오버레이**.
-3. Tap **오버레이 권한 허용** and enable Android's **다른 앱 위에 표시** permission.
-4. Return to the app and tap **RoomChat 오버레이 시작**.
-5. Drag the blue R bubble. Tap it to open/close the RoomChat web view above the current app.
+1. Install and open **RoomChat**.
+2. Sign in to the existing RoomChat site inside the app.
+3. Use the normal chat UI directly in the app.
+4. To use the Roblox-style floating chat, tap **오버레이 켜기**.
+5. Allow Android's **다른 앱 위에 표시** permission.
+6. If Android asks for notification permission, allow it for the ongoing overlay notification.
+7. Return to RoomChat and tap **오버레이 켜기** again if it did not start automatically.
+8. Drag the floating R bubble, then tap it to show or hide the chat panel. Use the panel's room selector to choose a room.
 
-The web view uses the existing public RoomChat site and its existing Supabase-backed web client. Users may need to sign in again inside this embedded browser because browser cookies are not automatically shared with Chrome.
+The main app and overlay use Android WebViews in the same application, so their RoomChat origin cookies and web storage are shared by Android's WebView profile. The overlay still requires the user to grant Android overlay permission.
 
-## Important
+## Notes
 
-- This is an Android-only companion app. A GitHub Pages website/PWA cannot grant itself Android overlay permission.
-- The user explicitly enables and can revoke the overlay permission in Android Settings.
-- Android 14+ foreground-service special-use declarations and Google Play review requirements apply. This source is a starting implementation; test on target devices and complete policy declarations before public Play distribution.
-- The app does not inspect or control other apps. It only displays a user-requested RoomChat window.
+- Package ID remains `com.xlg77.roomchatoverlay` so an existing installation can be upgraded when signatures match.
+- This is a debug-signed prerelease APK for testing, not a Play Store production release.
+- Android foreground-service and overlay permission behavior must be tested on target devices and Android versions before public distribution.
+- The overlay displays RoomChat content only; it does not inspect or control Roblox or other apps.
