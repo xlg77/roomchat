@@ -13,6 +13,14 @@
   <link rel="stylesheet" href="/roomchat/target-cursor.css?v=20261121-target-cursor-v2" />
   <style>.mobile-overlay-download{display:none;text-decoration:none}.desktop-app-download{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;white-space:nowrap}@media(max-width:700px){.mobile-overlay-download{display:inline-flex;align-items:center;justify-content:center}.desktop-app-download{display:none}}</style>
   <title>RoomChat — 실시간 채팅 커뮤니티</title>
+<style id="room-ai-status-styles">
+.room-ai-status{display:flex;flex-direction:column;gap:4px;margin:12px 16px;padding:11px 14px;border:1px solid var(--border-color,#cbd5e1);border-radius:12px;background:var(--surface-color,#f8fafc);color:var(--text-color,#1e293b);font-size:13px;line-height:1.5}
+.room-ai-status strong{font-size:13px}
+.room-ai-status span{white-space:pre-wrap;overflow-wrap:anywhere;opacity:.86}
+.room-ai-status.pending{border-color:#60a5fa;background:color-mix(in srgb,#3b82f6 8%,transparent)}
+.room-ai-status.success{border-color:#34a853;background:color-mix(in srgb,#22c55e 8%,transparent)}
+.room-ai-status.error{border-color:#ef7777;background:color-mix(in srgb,#ef4444 8%,transparent)}
+</style>
 </head>
 <body>
   <script id="roomchat-loading-failsafe">window.setTimeout(function(){var el=document.getElementById("app-loading");if(el){el.classList.add("is-hidden");window.setTimeout(function(){if(el.parentNode)el.parentNode.removeChild(el);},400);}},2500);</script>
@@ -524,7 +532,7 @@
     </section>
   </dialog>
   <script type="module" src="/roomchat/soundboard.js?v=20261025-moderation-sidebar-v1"></script>
-  <script type="module" src="/roomchat/app.js?v=20261128-ai-mention-fix"></script>
+  <script type="module" src="/roomchat/app.js?v=20261128-ai-chat-status-v1"></script>
   <script type="module" src="/roomchat/target-cursor.js?v=20261121-target-cursor-v2"></script>
   <script type="module" src="/roomchat/usage-tracker.js?v=20261121-usage-v1"></script>
   <script src="/roomchat/pwa-mobile.js?v=20261101-mobile-pwa-v1" defer></script>
