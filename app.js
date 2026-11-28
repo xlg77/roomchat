@@ -13,6 +13,9 @@ const ui = {
   roomName: $('#current-room-name'), bannerName: $('#banner-room-name'), roomTopic: $('#room-topic'),
   presence: $('#presence-count'), presenceButton: $('#presence-button'), messages: $('#message-list'),
   connection: $('#connection-state'), nicknameLabel: $('#nickname-label'), nicknameButton: $('#nickname-button'),
+  aiChatButton: $('#ai-chat-button'), aiChatDialog: $('#ai-chat-dialog'), aiChatClose: $('#ai-chat-close'),
+  aiChatNew: $('#ai-chat-new'), aiConversationList: $('#ai-conversation-list'), aiMessageList: $('#ai-message-list'),
+  aiChatForm: $('#ai-chat-form'), aiChatInput: $('#ai-chat-input'), aiChatSend: $('#ai-chat-send'),
   nicknameDialog: $('#nickname-dialog'), nicknameForm: $('#nickname-form'), nicknameInput: $('#nickname-input'),
   nicknameTitle: $('#nickname-title'), nicknameDescription: $('#nickname-description'),
   nicknameEyebrow: $('#nickname-eyebrow'), nicknameSubmit: $('#nickname-submit-button'),
@@ -114,6 +117,10 @@ const state = {
   profiles: new Map(), messageSearchQuery: '', messageSearchDate: '', soundEnabled: true, notificationHistory: [], messageReactions: new Map(), replyTarget: null, pinnedMessageIds: new Set(), unreadRoomMessages: 0, newMessageDividerId: null, typingLastSentAt: 0, typingClearTimer: 0,
 };
 let social = null;
+let aiConversationId = null;
+let aiMessages = [];
+let aiConversations = [];
+let aiChatBusy = false;
 let roomSearchQuery = '';
 let remoteTypingName = '';
 const typingIndicator = document.createElement('div');
@@ -1780,7 +1787,7 @@ function updateMentionSuggestions() {
   if (!match) return closeMentionPopup();
   const query = match[1].toLocaleLowerCase();
   const start = caret - match[0].length + match[0].lastIndexOf('@');
-  const names = [...new Set(['everyone', ...getMentionNames().filter(Boolean)])]
+  const names = [...new Set(['everyone', 'AI', ...getMentionNames().filter(Boolean)])]
     .filter((name) => name.toLocaleLowerCase().includes(query))
     .sort((a, b) => {
       if (a === 'everyone') return -1;
@@ -1807,7 +1814,7 @@ function renderMentionPopup() {
     option.className = `mention-option${name === 'everyone' ? ' mention-everyone-option' : ''}${index === mentionActiveIndex ? ' active' : ''}`;
     option.setAttribute('role', 'option');
     option.setAttribute('aria-selected', String(index === mentionActiveIndex));
-    option.textContent = name === 'everyone' ? '@everyone · 이 채널의 모든 사람' : `@${name}`;
+    option.textContent = name === 'everyone' ? '@everyone · 이 채널의 모든 사람' : name === 'AI' ? '@AI · RoomChat AI 호출' : `@${name}`;
     option.addEventListener('click', () => chooseMention(name));
     ui.mentionPopup.append(option);
   });
@@ -1832,6 +1839,11 @@ async function sendMessage(event) {
   if (!state.nickname) { showNicknameDialog(); return; }
   if (!state.room) return showToast('먼저 채널을 선택해 주세요.');
   const typedContent = ui.messageInput.value.trim();
+  const roomAiMatch = !state.pendingSound && !state.attachment ? typedContent.match(/^@AI\\s+([\\s\\S]+)$/iu) : null;
+  const roomAiPrompt = roomAiMatch?.[1]?.trim() || '';
+  if (!state.pendingSound && !state.attachment && /^@AI\\s*$/iu.test(typedContent)) {
+    return showToast('@AI 뒤에 질문을 입력해 주세요. 예: @AI 이 주제 설명해 줘');
+  }
   const pendingSound = state.pendingSound;
   // Keep the serialized sound payload below the chat message size limit,
   // including the marker and JSON overhead (not just the visible caption).
@@ -1883,6 +1895,14 @@ async function sendMessage(event) {
     if (error) throw error;
     const inserted = normalizeRpcRow(data);
     if (inserted) addMessage(inserted);
+    if (roomAiPrompt) {
+      try {
+        const aiResult = await requestRoomchatAI({ action: 'room_reply', roomId: state.room.id, message: roomAiPrompt });
+        if (aiResult.message) addMessage(aiResult.message);
+      } catch (aiError) {
+        showToast(errorText(aiError, 'RoomChat AI가 답변하지 못했어요.'));
+      }
+    }
     ui.messageInput.value = '';
     clearPendingSound();
     clearReplyTarget();
@@ -1898,6 +1918,143 @@ async function sendMessage(event) {
     ui.messageInput.focus();
   }
 }
+
+async function requestRoomchatAI(payload) {
+  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+  if (sessionError) throw sessionError;
+  const accessToken = sessionData.session?.access_token || SUPABASE_PUBLISHABLE_KEY;
+  const response = await fetch(`${SUPABASE_URL.replace(/\\/$/u, '')}/functions/v1/roomchat-ai`, {
+    method: 'POST',
+    headers: {
+      apikey: SUPABASE_PUBLISHABLE_KEY,
+      Authorization: `Bearer ${accessToken}`,
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      ...payload,
+      guestSessionId: state.user ? null : guestSessionId,
+      guestToken: state.user ? null : guestToken,
+    }),
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(result.error || 'AI 요청을 처리하지 못했어요.');
+  return result;
+}
+function renderAiMessages() {
+  if (!ui.aiMessageList) return;
+  ui.aiMessageList.replaceChildren();
+  if (!aiMessages.length) {
+    const empty = document.createElement('div');
+    empty.className = 'ai-chat-empty';
+    const title = document.createElement('strong');
+    title.textContent = '무엇이든 물어보세요.';
+    const hint = document.createElement('span');
+    hint.textContent = '대화는 계정 또는 게스트 세션에 저장돼요.';
+    empty.append(title, hint);
+    ui.aiMessageList.append(empty);
+    return;
+  }
+  for (const message of aiMessages) {
+    const row = document.createElement('article');
+    row.className = `ai-message ${message.role === 'model' ? 'model' : 'user'}`;
+    const label = document.createElement('span');
+    label.className = 'ai-message-label';
+    label.textContent = message.role === 'model' ? 'RoomChat AI' : '나';
+    const content = document.createElement('div');
+    content.textContent = String(message.content || '');
+    row.append(label, content);
+    ui.aiMessageList.append(row);
+  }
+  ui.aiMessageList.scrollTop = ui.aiMessageList.scrollHeight;
+}
+function renderAiConversationList() {
+  if (!ui.aiConversationList) return;
+  ui.aiConversationList.replaceChildren();
+  if (!aiConversations.length) {
+    const empty = document.createElement('span');
+    empty.className = 'ai-chat-history-empty';
+    empty.textContent = '저장된 대화가 없어요.';
+    ui.aiConversationList.append(empty);
+    return;
+  }
+  for (const conversation of aiConversations) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = `ai-conversation-item${conversation.id === aiConversationId ? ' active' : ''}`;
+    button.dataset.conversationId = conversation.id;
+    const title = document.createElement('span');
+    title.textContent = conversation.title || '새 AI 대화';
+    button.append(title);
+    ui.aiConversationList.append(button);
+  }
+}
+async function loadAiConversationList() {
+  const result = await requestRoomchatAI({ action: 'list' });
+  aiConversations = result.conversations || [];
+  renderAiConversationList();
+}
+async function selectAiConversation(conversationId) {
+  const result = await requestRoomchatAI({ action: 'load', conversationId });
+  aiConversationId = result.conversation.id;
+  aiMessages = Array.isArray(result.conversation.messages) ? result.conversation.messages : [];
+  renderAiConversationList();
+  renderAiMessages();
+}
+function startNewAiConversation() {
+  aiConversationId = null;
+  aiMessages = [];
+  renderAiConversationList();
+  renderAiMessages();
+  ui.aiChatInput?.focus();
+}
+async function openAiChat() {
+  if (!state.nickname) { showNicknameDialog(); return; }
+  if (!ui.aiChatDialog.open) ui.aiChatDialog.showModal();
+  ui.aiChatButton?.setAttribute('aria-expanded', 'true');
+  try {
+    await loadAiConversationList();
+    if (aiConversationId && aiConversations.some((item) => item.id === aiConversationId)) {
+      await selectAiConversation(aiConversationId);
+    } else if (aiConversations.length) {
+      await selectAiConversation(aiConversations[0].id);
+    } else {
+      startNewAiConversation();
+    }
+  } catch (error) {
+    showToast(errorText(error, 'AI 대화 기록을 불러오지 못했어요.'));
+  }
+}
+async function sendAiChatMessage(event) {
+  event?.preventDefault();
+  if (aiChatBusy) return;
+  const prompt = ui.aiChatInput.value.trim();
+  if (!prompt) return;
+  aiChatBusy = true;
+  ui.aiChatSend.disabled = true;
+  aiMessages.push({ role: 'user', content: prompt });
+  ui.aiChatInput.value = '';
+  renderAiMessages();
+  try {
+    const result = await requestRoomchatAI({
+      action: 'chat',
+      conversationId: aiConversationId,
+      message: prompt,
+    });
+    aiConversationId = result.conversationId;
+    aiMessages.push({ role: 'model', content: result.reply });
+    renderAiMessages();
+    await loadAiConversationList();
+  } catch (error) {
+    aiMessages.push({ role: 'model', content: errorText(error, 'AI 답변을 불러오지 못했어요. 다시 시도해 주세요.') });
+    renderAiMessages();
+    showToast(errorText(error, 'AI 요청에 실패했어요.'));
+  } finally {
+    aiChatBusy = false;
+    ui.aiChatSend.disabled = false;
+    ui.aiChatInput.focus();
+  }
+}
+
 async function enableNotifications() {
   if (!('Notification' in window)) return showToast('이 브라우저는 알림 기능을 지원하지 않아요.');
   if (Notification.permission === 'denied') return showToast('브라우저 설정에서 이 사이트의 알림을 허용해 주세요.');
@@ -2676,6 +2833,31 @@ function setupEvents() {
     if (event.target === ui.adminPanelDialog) ui.adminPanelDialog.close();
   });
   ui.presenceButton.addEventListener('click', openMembers);
+  ui.aiChatButton?.addEventListener('click', openAiChat);
+  ui.aiChatClose?.addEventListener('click', () => {
+    ui.aiChatDialog.close();
+    ui.aiChatButton?.setAttribute('aria-expanded', 'false');
+  });
+  ui.aiChatNew?.addEventListener('click', startNewAiConversation);
+  ui.aiChatDialog?.addEventListener('click', (event) => {
+    if (event.target === ui.aiChatDialog) {
+      ui.aiChatDialog.close();
+      ui.aiChatButton?.setAttribute('aria-expanded', 'false');
+    }
+  });
+  ui.aiConversationList?.addEventListener('click', async (event) => {
+    const button = event.target.closest('[data-conversation-id]');
+    if (!button || !ui.aiConversationList.contains(button)) return;
+    try { await selectAiConversation(button.dataset.conversationId); }
+    catch (error) { showToast(errorText(error, '이전 AI 대화를 불러오지 못했어요.')); }
+  });
+  ui.aiChatForm?.addEventListener('submit', sendAiChatMessage);
+  ui.aiChatInput?.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) {
+      event.preventDefault();
+      ui.aiChatForm.requestSubmit();
+    }
+  });
   ui.membersClose.addEventListener('click', () => ui.membersDialog.close());
   ui.notificationButton.addEventListener('click', enableNotifications);
   state.notificationHistory = readNotificationHistory();
