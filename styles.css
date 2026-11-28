@@ -5166,3 +5166,5 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,[role="button"]:
  .ai-chat-form textarea{font-size:12px}
  .ai-chat-form .primary-button{min-width:65px;padding:0 8px}
 }
+
+.ai-chat-history-empty{padding:8px;color:#9aa39d;font-size:10px;line-height:1.5}
