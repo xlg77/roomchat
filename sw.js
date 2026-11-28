@@ -1,4 +1,4 @@
-const CACHE_NAME = 'roomchat-mobile-pwa-v4-ai-stream';
+const CACHE_NAME = 'roomchat-mobile-pwa-v5-stream-heartbeat';
 const APP_SHELL = [
   '/roomchat/',
   '/roomchat/index.html',
