@@ -110,7 +110,7 @@ function isAllowedRoomSoundUrl(value) {
 const state = {
   nickname: '', loginNickname: '', isVerified: false, isAdmin: false, user: null,
   rooms: [], room: null, roomChannel: null, roomsChannel: null, members: [], messages: [],
-  attachment: null, attachmentUrl: '', attachmentKind: null, pendingSound: null, soundPreviewNode: null, notifications: false, toastTimer: 0,
+  attachment: null, attachmentUrl: '', attachmentKind: null, roomAiStatus: null, roomAiStatusRoomId: null, pendingSound: null, soundPreviewNode: null, notifications: false, toastTimer: 0,
   roomRequest: 0, kickTimer: 0, memberTimer: 0, identityTimer: 0, kickedRooms: new Set(),
   accountMode: 'register', adminPanelTab: 'overview', pendingAdminInvite: null, pendingParentRoomId: null, pendingUnlimitedMessages: false,
   avatars: new Map(), myAvatarPath: null, avatarBusy: false, gifRequest: 0,
@@ -1104,6 +1104,18 @@ function buildGuideCard() {
 }
 function renderMessages() {
   ui.messages.replaceChildren();
+  if (state.roomAiStatus && state.roomAiStatusRoomId === state.room?.id) {
+    const status = document.createElement('div');
+    status.className = 'room-ai-status ' + (state.roomAiStatus.type || 'pending');
+    status.setAttribute('role', 'status');
+    status.setAttribute('aria-live', 'polite');
+    const title = document.createElement('strong');
+    title.textContent = state.roomAiStatus.title || 'RoomChat AI';
+    const detail = document.createElement('span');
+    detail.textContent = state.roomAiStatus.detail || '';
+    status.append(title, detail);
+    ui.messages.append(status);
+  }
   const guide = isGuideRoom(state.room);
   if (guide) ui.messages.append(buildGuideCard());
   if (!state.messages.length) {
@@ -1942,11 +1954,24 @@ async function sendMessage(event) {
     const inserted = normalizeRpcRow(data);
     if (inserted) addMessage(inserted);
     if (roomAiPrompt) {
+      const aiRoomId = state.room.id;
+      const startedAt = Date.now();
+      setRoomAiStatus('pending', 'RoomChat AI에 질문 전달 중…', '채팅 메시지는 저장됐어요. AI 서버에 요청을 보내고 있어요.', aiRoomId);
       try {
-        const aiResult = await requestRoomchatAI({ action: 'room_reply', roomId: state.room.id, message: roomAiPrompt });
-        if (aiResult.message) addMessage(aiResult.message);
+        setRoomAiStatus('pending', 'AI가 답변을 생성하고 있어요…', 'Gemini 3.8 Flash 응답을 기다리는 중이에요.', aiRoomId);
+        const aiResult = await requestRoomchatAI({ action: 'room_reply', roomId: aiRoomId, message: roomAiPrompt });
+        if (state.room?.id !== aiRoomId) {
+          showToast('AI 답변이 도착했어요. 질문을 보낸 채널에서 확인해 주세요.');
+        } else if (aiResult.message) {
+          addMessage(aiResult.message);
+          setRoomAiStatus('success', 'RoomChat AI 답변 완료', `응답을 채팅에 추가했어요 · ${((Date.now() - startedAt) / 1000).toFixed(1)}초`, aiRoomId);
+        } else {
+          setRoomAiStatus('error', 'AI 응답을 받았지만 메시지가 없어요.', '서버 응답에 message 항목이 없습니다. 관리자 진단을 실행해 주세요.', aiRoomId);
+        }
       } catch (aiError) {
-        showToast(errorText(aiError, 'RoomChat AI가 답변하지 못했어요.'));
+        const detail = errorText(aiError, 'AI 서버 요청에 실패했어요.');
+        setRoomAiStatus('error', 'RoomChat AI 응답 실패', detail, aiRoomId);
+        showToast(detail);
       }
     }
     ui.messageInput.value = '';
@@ -1965,6 +1990,14 @@ async function sendMessage(event) {
   }
 }
 
+function setRoomAiStatus(type, title, detail, roomId = state.room?.id) {
+  state.roomAiStatus = { type, title, detail };
+  state.roomAiStatusRoomId = roomId;
+  if (state.room?.id === roomId) {
+    renderMessages();
+    ui.messages.scrollTop = ui.messages.scrollHeight;
+  }
+}
 async function requestRoomchatAI(payload) {
   const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
   if (sessionError) throw sessionError;
