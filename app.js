@@ -1958,6 +1958,7 @@ async function sendMessage(event) {
       const startedAt = Date.now();
       setRoomAiStatus('pending', 'RoomChat AI에 질문 전달 중…', '채팅 메시지는 저장됐어요. AI 서버에 요청을 보내고 있어요.', aiRoomId);
       try {
+        await new Promise((resolve) => requestAnimationFrame(resolve));
         setRoomAiStatus('pending', 'AI가 답변을 생성하고 있어요…', 'Gemini 3.8 Flash 응답을 기다리는 중이에요.', aiRoomId);
         const aiResult = await requestRoomchatAI({ action: 'room_reply', roomId: aiRoomId, message: roomAiPrompt });
         if (state.room?.id !== aiRoomId) {
