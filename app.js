@@ -1617,7 +1617,9 @@ async function setNickname(name) {
 }
 
 function ensureAiDiagnosticsButton() {
-  if (!ui.aiChatDialog || document.getElementById('ai-diagnostics-button')) return;
+  if (!ui.aiChatDialog) return;
+  const existing = document.getElementById('ai-diagnostics-button');
+  if (existing) { existing.hidden = !state.isAdmin; return; }
   const actions = ui.aiChatDialog.querySelector('.ai-chat-header-actions');
   if (!actions) return;
   const button = document.createElement('button');
