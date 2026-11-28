@@ -110,7 +110,7 @@ function isAllowedRoomSoundUrl(value) {
 const state = {
   nickname: '', loginNickname: '', isVerified: false, isAdmin: false, user: null,
   rooms: [], room: null, roomChannel: null, roomsChannel: null, members: [], messages: [],
-  attachment: null, attachmentUrl: '', attachmentKind: null, roomAiStatus: null, roomAiStatusRoomId: null, pendingSound: null, soundPreviewNode: null, notifications: false, toastTimer: 0,
+  attachment: null, attachmentUrl: '', attachmentKind: null, roomAiStatus: null, roomAiStatusRoomId: null, roomAiStreamText: '', roomAiStreamRoomId: null, pendingSound: null, soundPreviewNode: null, notifications: false, toastTimer: 0,
   roomRequest: 0, kickTimer: 0, memberTimer: 0, identityTimer: 0, kickedRooms: new Set(),
   accountMode: 'register', adminPanelTab: 'overview', pendingAdminInvite: null, pendingParentRoomId: null, pendingUnlimitedMessages: false,
   avatars: new Map(), myAvatarPath: null, avatarBusy: false, gifRequest: 0,
@@ -1116,6 +1116,17 @@ function renderMessages() {
     status.append(title, detail);
     ui.messages.append(status);
   }
+  if (state.roomAiStreamRoomId === state.room?.id) {
+    const stream = document.createElement('div');
+    stream.className = 'room-ai-stream';
+    const label = document.createElement('strong');
+    label.textContent = 'RoomChat AI · 실시간 답변';
+    const text = document.createElement('div');
+    text.className = 'room-ai-stream-text';
+    text.textContent = state.roomAiStreamText || '답변을 생성하고 있어요…';
+    stream.append(label, text);
+    ui.messages.append(stream);
+  }
   const guide = isGuideRoom(state.room);
   if (guide) ui.messages.append(buildGuideCard());
   if (!state.messages.length) {
@@ -1960,16 +1971,39 @@ async function sendMessage(event) {
       try {
         await new Promise((resolve) => requestAnimationFrame(resolve));
         setRoomAiStatus('pending', 'AI가 답변을 생성하고 있어요…', 'Gemini 3.8 Flash 응답을 기다리는 중이에요.', aiRoomId);
-        const aiResult = await requestRoomchatAI({ action: 'room_reply', roomId: aiRoomId, message: roomAiPrompt });
+        state.roomAiStreamText = '';
+        state.roomAiStreamRoomId = aiRoomId;
+        renderMessages();
+        const aiResult = await requestRoomchatAIStream(
+          { action: 'room_reply', roomId: aiRoomId, message: roomAiPrompt },
+          (partialText) => {
+            state.roomAiStreamText = partialText;
+            if (state.room?.id === aiRoomId) {
+              const streamText = ui.messages.querySelector('.room-ai-stream-text');
+              if (streamText) streamText.textContent = partialText;
+              ui.messages.scrollTop = ui.messages.scrollHeight;
+            }
+          },
+        );
+        state.roomAiStreamText = '';
+        state.roomAiStreamRoomId = null;
         if (state.room?.id !== aiRoomId) {
           showToast('AI 답변이 도착했어요. 질문을 보낸 채널에서 확인해 주세요.');
         } else if (aiResult.message) {
           addMessage(aiResult.message);
-          setRoomAiStatus('success', 'RoomChat AI 답변 완료', `응답을 채팅에 추가했어요 · ${((Date.now() - startedAt) / 1000).toFixed(1)}초`, aiRoomId);
+          const m = aiResult.metrics || {};
+          const timing = [
+            `전체 ${Number(m.totalMs || (Date.now() - startedAt)).toLocaleString()}ms`,
+            m.firstTokenMs != null ? `첫 글자 ${Math.round(m.firstTokenMs)}ms` : null,
+            m.saveMs != null ? `저장 ${Math.round(m.saveMs)}ms` : null,
+          ].filter(Boolean).join(' · ');
+          setRoomAiStatus('success', 'RoomChat AI 답변 완료', timing, aiRoomId);
         } else {
-          setRoomAiStatus('error', 'AI 응답을 받았지만 메시지가 없어요.', '서버 응답에 message 항목이 없습니다. 관리자 진단을 실행해 주세요.', aiRoomId);
+          setRoomAiStatus('error', 'AI 응답을 받았지만 메시지가 없어요.', '서버가 완료 메시지를 반환하지 않았어요.', aiRoomId);
         }
       } catch (aiError) {
+        state.roomAiStreamText = '';
+        state.roomAiStreamRoomId = null;
         const detail = errorText(aiError, 'AI 서버 요청에 실패했어요.');
         setRoomAiStatus('error', 'RoomChat AI 응답 실패', detail, aiRoomId);
         showToast(detail);
@@ -2019,6 +2053,72 @@ async function requestRoomchatAI(payload) {
   const result = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(result.error || 'AI 요청을 처리하지 못했어요.');
   return result;
+}
+async function requestRoomchatAIStream(payload, onDelta = () => {}) {
+  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+  if (sessionError) throw sessionError;
+  const accessToken = sessionData.session?.access_token || SUPABASE_PUBLISHABLE_KEY;
+  const response = await fetch(`${SUPABASE_URL.replace(/\/$/u, '')}/functions/v1/roomchat-ai`, {
+    method: 'POST',
+    headers: {
+      apikey: SUPABASE_PUBLISHABLE_KEY,
+      Authorization: `Bearer ${accessToken}`,
+      'content-type': 'application/json',
+      Accept: 'text/event-stream',
+    },
+    body: JSON.stringify({
+      ...payload,
+      guestSessionId: state.user ? null : guestSessionId,
+      guestToken: state.user ? null : guestToken,
+    }),
+  });
+  if (!response.ok) {
+    const result = await response.json().catch(() => ({}));
+    throw new Error(result.error || 'AI 요청을 처리하지 못했어요.');
+  }
+  if (!response.body) throw new Error('브라우저가 실시간 AI 응답을 지원하지 않아요.');
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let accumulated = '';
+  let completed = null;
+  let streamError = null;
+  const processLine = (rawLine) => {
+    const line = rawLine.trim();
+    if (!line.startsWith('data:')) return;
+    const raw = line.slice(5).trim();
+    if (!raw || raw === '[DONE]') return;
+    let event;
+    try { event = JSON.parse(raw); } catch { return; }
+    if (event.type === 'delta' && typeof event.text === 'string') {
+      accumulated += event.text;
+      onDelta(accumulated);
+    } else if (event.type === 'done') {
+      completed = event;
+    } else if (event.type === 'error') {
+      streamError = new Error(event.error || 'AI 응답 생성에 실패했어요.');
+    }
+  };
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    let newline;
+    while ((newline = buffer.indexOf('\n')) >= 0) {
+      const line = buffer.slice(0, newline).replace(/\r$/u, '');
+      buffer = buffer.slice(newline + 1);
+      processLine(line);
+    }
+    if (streamError) {
+      await reader.cancel().catch(() => {});
+      throw streamError;
+    }
+  }
+  buffer += decoder.decode();
+  if (buffer) processLine(buffer);
+  if (streamError) throw streamError;
+  if (!completed) throw new Error('AI 스트림이 완료되기 전에 연결이 종료됐어요.');
+  return completed;
 }
 function renderAiMessages() {
   if (!ui.aiMessageList) return;
