@@ -1923,7 +1923,7 @@ async function requestRoomchatAI(payload) {
   const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
   if (sessionError) throw sessionError;
   const accessToken = sessionData.session?.access_token || SUPABASE_PUBLISHABLE_KEY;
-  const response = await fetch(`${SUPABASE_URL.replace(/\\/$/u, '')}/functions/v1/roomchat-ai`, {
+  const response = await fetch(`${SUPABASE_URL.replace(/\/$/u, '')}/functions/v1/roomchat-ai`, {
     method: 'POST',
     headers: {
       apikey: SUPABASE_PUBLISHABLE_KEY,
