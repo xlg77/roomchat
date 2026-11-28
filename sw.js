@@ -1,4 +1,4 @@
-const CACHE_NAME = 'roomchat-mobile-pwa-v6-stream-metrics';
+const CACHE_NAME = 'roomchat-mobile-pwa-v7-direct-room-entry';
 const APP_SHELL = [
   '/roomchat/',
   '/roomchat/index.html',
@@ -8,6 +8,12 @@ const APP_SHELL = [
   '/roomchat/soundboard.js',
   '/roomchat/floating-chat.js',
   '/roomchat/pwa-mobile.js',
+  '/roomchat/target-cursor.css',
+  '/roomchat/target-cursor.js',
+  '/roomchat/usage-tracker.js',
+  '/roomchat/config.js',
+  '/roomchat/social.js',
+  '/roomchat/fonts.js',
   '/roomchat/icon.svg'
 ];
 
@@ -41,7 +47,13 @@ self.addEventListener('fetch', (event) => {
   if (request.mode === 'navigate') {
     event.respondWith((async () => {
       try {
-        const response = await fetch(request, { cache: 'no-store' });
+        let response = await fetch(request, { cache: 'no-store' });
+        // GitHub Pages returns 404.html for unknown room paths. Prefer the
+        // canonical latest app shell while keeping the requested URL intact.
+        if (response.status === 404) {
+          const appResponse = await fetch('/roomchat/index.html', { cache: 'no-store' });
+          if (appResponse.ok) response = appResponse;
+        }
         if (response.ok) {
           const cache = await caches.open(CACHE_NAME);
           await cache.put('/roomchat/index.html', response.clone());
