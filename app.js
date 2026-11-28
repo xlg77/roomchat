@@ -1993,7 +1993,11 @@ async function sendMessage(event) {
           addMessage(aiResult.message);
           const m = aiResult.metrics || {};
           const timing = [
-            `전체 ${Number(m.totalMs || (Date.now() - startedAt)).toLocaleString()}ms`,
+            `전체 ${Math.round(m.totalMs ?? (Date.now() - startedAt))}ms`,
+            m.authMs != null ? `인증 ${Math.round(m.authMs)}ms` : null,
+            m.rateLimitMs != null ? `사용량 확인 ${Math.round(m.rateLimitMs)}ms` : null,
+            m.roomCheckMs != null ? `방 확인 ${Math.round(m.roomCheckMs)}ms` : null,
+            m.geminiMs != null ? `Gemini ${Math.round(m.geminiMs)}ms` : null,
             m.firstTokenMs != null ? `첫 글자 ${Math.round(m.firstTokenMs)}ms` : null,
             m.saveMs != null ? `저장 ${Math.round(m.saveMs)}ms` : null,
           ].filter(Boolean).join(' · ');
