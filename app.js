@@ -1615,7 +1615,51 @@ async function setNickname(name) {
   if (changed) showToast(`표시 이름이 “${result}”로 조정되었어요.`);
   else showToast(state.user ? '디스플레이 닉네임을 저장했어요.' : '게스트 닉네임을 정했어요. 브라우저를 닫으면 유지되지 않아요.');
 }
+
+function ensureAiDiagnosticsButton() {
+  if (!ui.aiChatDialog || document.getElementById('ai-diagnostics-button')) return;
+  const actions = ui.aiChatDialog.querySelector('.ai-chat-header-actions');
+  if (!actions) return;
+  const button = document.createElement('button');
+  button.id = 'ai-diagnostics-button';
+  button.type = 'button';
+  button.className = 'secondary-button';
+  button.textContent = 'AI 연결 진단';
+  button.hidden = !state.isAdmin;
+  button.addEventListener('click', async () => {
+    if (!state.isAdmin || button.disabled) return;
+    button.disabled = true;
+    button.textContent = '진단 중…';
+    try {
+      const result = await requestRoomchatAI({ action: 'diagnostics' });
+      const checks = result.diagnostics?.checks || [];
+      const labels = { api_key: 'API 키 설정', model_access: '모델 접근', generate_content: '실제 답변 생성' };
+      const lines = checks.map((check) => {
+        const details = [check.status ? 'HTTP ' + check.status : '', Number.isFinite(check.elapsedMs) ? check.elapsedMs + 'ms' : '', check.category || ''].filter(Boolean).join(' · ');
+        return (labels[check.stage] || check.stage) + ': ' + (check.ok ? '정상' : '실패') + (details ? ' (' + details + ')' : '');
+      });
+      const row = document.createElement('article');
+      row.className = 'ai-message model';
+      const label = document.createElement('span');
+      label.className = 'ai-message-label';
+      label.textContent = '관리자 진단 결과';
+      const content = document.createElement('div');
+      content.textContent = '모델: ' + (result.diagnostics?.model || '알 수 없음') + '\\n' + (lines.join('\\n') || '진단 결과가 없어요.');
+      row.append(label, content);
+      ui.aiMessageList.append(row);
+      ui.aiMessageList.scrollTop = ui.aiMessageList.scrollHeight;
+      showToast(checks.length && checks.every((check) => check.ok) ? 'Gemini 연결 진단이 모두 정상이에요.' : '진단이 끝났어요. AI 대화창에서 결과를 확인해 주세요.');
+    } catch (error) {
+      showToast(errorText(error, '진단 요청을 완료하지 못했어요.'));
+    } finally {
+      button.disabled = false;
+      button.textContent = 'AI 연결 진단';
+    }
+  });
+  actions.insertBefore(button, actions.firstChild);
+}
 function updateIdentityUI() {
+  ensureAiDiagnosticsButton();
   ui.nicknameLabel.textContent = state.nickname || '닉네임';
   ui.nicknameLabel.classList.toggle('admin-name', state.isVerified);
   ui.nicknameButton.querySelector('.avatar-dot').textContent = [...(state.nickname || '?')][0] || '?';
