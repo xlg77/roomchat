@@ -92,6 +92,7 @@
           <button id="presence-button" class="header-tool presence-tool" type="button" aria-haspopup="dialog" aria-label="함께 있는 사람 보기" title="접속자 보기">
             <span aria-hidden="true">♟</span><span id="presence-count">—</span>
           </button>
+          <button id="ai-chat-button" class="header-tool ai-chat-open-button" type="button" aria-haspopup="dialog" title="RoomChat AI 열기">✦ AI</button>
           <button id="admin-panel-button" class="header-tool admin-panel-button" type="button" aria-haspopup="dialog" title="관리자 운영 패널" hidden>운영</button>
 
           <button id="friends-button" class="header-tool friends-button" type="button" aria-haspopup="dialog" title="친구와 DM" hidden>
@@ -148,7 +149,7 @@
           <label class="attach-button video-attach-button" for="video-file" title="동영상 파일 선택" aria-label="동영상 파일 선택"><span aria-hidden="true">▶</span><input id="video-file" type="file" accept="video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov" hidden /></label>
           <button id="gif-button" class="attach-button gif-button" type="button" title="GIF 검색" aria-label="GIF 검색">GIF</button>
           <button id="soundboard-button" class="attach-button soundboard-button" type="button" title="MyInstants 사운드보드" aria-label="사운드보드 열기">♪</button>
-          <textarea id="message-input" rows="1" maxlength="2000" placeholder="메시지를 입력하세요…" aria-label="메시지 입력"></textarea>
+          <textarea id="message-input" rows="1" maxlength="2000" placeholder="메시지를 입력하세요… (@AI 질문으로 AI 호출)" aria-label="메시지 입력"></textarea>
           <button id="send-button" class="send-button" type="submit"><span>보내기</span><span aria-hidden="true">↗</span></button>
         </form>
         <div class="composer-foot"><span>Enter 전송 · Shift + Enter 줄바꿈</span><span id="char-count">0 / 2000</span></div>
@@ -493,6 +494,33 @@
         <button id="soundboard-insert" class="primary-button" type="button" disabled>채팅에 붙이기</button>
       </section>
       <footer class="soundboard-footer"><button id="soundboard-stop" class="secondary-button" type="button">■ 재생 중지</button><span>사운드 제공: <a href="https://www.myinstants.com/" target="_blank" rel="noopener noreferrer">MyInstants</a></span></footer>
+    </section>
+  </dialog>
+  <dialog id="ai-chat-dialog" class="modal ai-chat-modal" aria-labelledby="ai-chat-title">
+    <section class="modal-card ai-chat-card">
+      <header class="ai-chat-header">
+        <div><span class="eyebrow">ROOMCHAT AI · GEMINI 3.8 FLASH</span><h2 id="ai-chat-title">RoomChat AI</h2><p>질문하고, 이전 대화도 이어서 확인할 수 있어요.</p></div>
+        <div class="ai-chat-header-actions">
+          <button id="ai-chat-new" class="secondary-button" type="button">새 대화</button>
+          <button id="ai-chat-close" class="secondary-button" type="button">닫기</button>
+        </div>
+      </header>
+      <div class="ai-chat-layout">
+        <aside class="ai-chat-history">
+          <strong>이전 대화</strong>
+          <div id="ai-conversation-list" class="ai-conversation-list" aria-label="저장된 AI 대화"></div>
+        </aside>
+        <div class="ai-chat-main">
+          <div id="ai-message-list" class="ai-message-list" aria-live="polite">
+            <div class="ai-chat-empty"><strong>무엇이든 물어보세요.</strong><span>대화는 계정 또는 게스트 세션에 저장돼요.</span></div>
+          </div>
+          <form id="ai-chat-form" class="ai-chat-form">
+            <textarea id="ai-chat-input" rows="2" maxlength="4000" placeholder="RoomChat AI에게 질문하기…" aria-label="AI 질문 입력"></textarea>
+            <button id="ai-chat-send" class="primary-button" type="submit">보내기 ↗</button>
+          </form>
+          <p class="ai-chat-note">AI 답변은 틀릴 수 있어요. 중요한 내용은 한 번 더 확인해 주세요.</p>
+        </div>
+      </div>
     </section>
   </dialog>
   <script type="module" src="/roomchat/soundboard.js?v=20261025-moderation-sidebar-v1"></script>
