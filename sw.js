@@ -1,4 +1,4 @@
-const CACHE_NAME = 'roomchat-mobile-pwa-v1';
+const CACHE_NAME = 'roomchat-mobile-pwa-v2-ai';
 const APP_SHELL = [
   '/roomchat/',
   '/roomchat/index.html',
