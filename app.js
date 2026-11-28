@@ -1885,9 +1885,9 @@ async function sendMessage(event) {
   if (!state.nickname) { showNicknameDialog(); return; }
   if (!state.room) return showToast('먼저 채널을 선택해 주세요.');
   const typedContent = ui.messageInput.value.trim();
-  const roomAiMatch = !state.pendingSound && !state.attachment ? typedContent.match(/^@AI\\s+([\\s\\S]+)$/iu) : null;
+  const roomAiMatch = !state.pendingSound && !state.attachment ? typedContent.match(/^@AI\s+([\s\S]+)$/iu) : null;
   const roomAiPrompt = roomAiMatch?.[1]?.trim() || '';
-  if (!state.pendingSound && !state.attachment && /^@AI\\s*$/iu.test(typedContent)) {
+  if (!state.pendingSound && !state.attachment && /^@AI\s*$/iu.test(typedContent)) {
     return showToast('@AI 뒤에 질문을 입력해 주세요. 예: @AI 이 주제 설명해 줘');
   }
   const pendingSound = state.pendingSound;
