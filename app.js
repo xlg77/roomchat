@@ -1,7 +1,7 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, GIPHY_API_KEY } from './config.js?v=20261031-video-attachments-v1';
-import { initSocial, renderMentions, mentionsName } from './social.js?v=20261031-video-attachments-v1';
-import { ensureFont, fontStack } from './fonts.js?v=20261031-video-attachments-v1';
+import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, GIPHY_API_KEY } from './config.js?v=20261128-direct-room-entry-v1';
+import { initSocial, renderMentions, mentionsName } from './social.js?v=20261128-direct-room-entry-v1';
+import { ensureFont, fontStack } from './fonts.js?v=20261128-direct-room-entry-v1';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   realtime: { params: { eventsPerSecond: 8 } },
@@ -2350,7 +2350,7 @@ async function notifyIncoming(message) {
 }
 function registerServiceWorker() {
   if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-    navigator.serviceWorker.register('./sw.js').catch(() => {});
+    navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).catch(() => {});
   }
 }
 function chooseAttachment(file, forcedKind = null) {
