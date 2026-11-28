@@ -2097,6 +2097,11 @@ async function requestRoomchatAIStream(payload, onDelta = () => {}) {
     if (event.type === 'delta' && typeof event.text === 'string') {
       accumulated += event.text;
       onDelta(accumulated);
+    } else if (event.type === 'heartbeat') {
+      if (!accumulated) {
+        const streamText = ui.messages?.querySelector('.room-ai-stream-text');
+        if (streamText) streamText.textContent = `Gemini 연결 중… ${Math.max(1, Math.ceil((event.elapsedMs || 0) / 1000))}초`;
+      }
     } else if (event.type === 'done') {
       completed = event;
     } else if (event.type === 'error') {
