@@ -1999,6 +1999,8 @@ async function sendMessage(event) {
             m.roomCheckMs != null ? `방 확인 ${Math.round(m.roomCheckMs)}ms` : null,
             m.geminiMs != null ? `Gemini ${Math.round(m.geminiMs)}ms` : null,
             m.firstTokenMs != null ? `첫 글자 ${Math.round(m.firstTokenMs)}ms` : null,
+            m.deltaCount != null ? `수신 조각 ${m.deltaCount}개` : null,
+            m.maxDeltaGapMs != null ? `최대 조각 간격 ${Math.round(m.maxDeltaGapMs)}ms` : null,
             m.saveMs != null ? `저장 ${Math.round(m.saveMs)}ms` : null,
           ].filter(Boolean).join(' · ');
           setRoomAiStatus('success', 'RoomChat AI 답변 완료', timing, aiRoomId);
