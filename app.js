@@ -1646,7 +1646,7 @@ function ensureAiDiagnosticsButton() {
       label.className = 'ai-message-label';
       label.textContent = '관리자 진단 결과';
       const content = document.createElement('div');
-      content.textContent = '모델: ' + (result.diagnostics?.model || '알 수 없음') + '\\n' + (lines.join('\\n') || '진단 결과가 없어요.');
+      content.textContent = '모델: ' + (result.diagnostics?.model || '알 수 없음') + '\n' + (lines.join('\n') || '진단 결과가 없어요.');
       row.append(label, content);
       ui.aiMessageList.append(row);
       ui.aiMessageList.scrollTop = ui.aiMessageList.scrollHeight;
